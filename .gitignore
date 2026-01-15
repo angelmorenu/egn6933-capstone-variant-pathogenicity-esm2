@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Envs
+.venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data / outputs
+/data/
+outputs/
+artifacts/
+
+# Exported docs (keep sources like .md; avoid committing generated binaries)
+*.pdf
+*.docx
+
+# Research papers (avoid distributing full-text PDFs)
+research/Papers/*.pdf
+research/Papers/*.pdf.icloud
+research/Papers/.*.pdf.icloud
+
+# Local research workspace (optional; keep out of public repo)
+research/
+
+# Old backups
+*_OLD_BACKUP*
+
+# Common large/binary artifacts (extra safety for public repos)
+*.pkl
+*.pickle
+*.parquet
+*.feather
+*.arrow
+*.npy
+*.npz
+*.pt
+*.pth
+*.onnx
+*.h5
+*.hdf5
+
+# Logs
+*.log
+
+# OS
+.DS_Store

@@ -1,0 +1,14 @@
+[project]
+name = "variant-embeddings-capstone"
+version = "0.1.0"
+description = "ClinVar non-coding pathogenic vs benign classification using DNA embeddings"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+
+[tool.black]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

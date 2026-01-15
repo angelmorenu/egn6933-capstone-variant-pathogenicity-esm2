@@ -1,0 +1,1 @@
+Scripts are intended to be runnable entrypoints (e.g., split creation, training, scoring).
