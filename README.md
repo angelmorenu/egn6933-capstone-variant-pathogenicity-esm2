@@ -223,7 +223,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 **Angel Morenu**  
-M.S. Applied Data Science Candidate  
+M.S. Applied Data Science
 University of Florida  
 Email: angel.morenu@ufl.edu
 
