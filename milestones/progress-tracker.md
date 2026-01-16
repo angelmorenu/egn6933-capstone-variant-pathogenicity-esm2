@@ -1,15 +1,15 @@
 # Project Milestones & Progress Tracker
 
-**Project Title:** An End-to-End ML System for Interpreting Non-Coding Genetic Variants Using Functional Genomics Data  
-**Student Name:** Angel Morenu 
-**Faculty Advisor:** [TBD]  
-**Last Updated:** January 7, 2026
+**Project Title:** Machine Learning Classification of Pathogenic vs. Benign Coding Genetic Variants Using Protein Language Model Embeddings  
+**Student Name:** Angel Morenu  
+**Faculty Advisor:** Dr. Fan  
+**Last Updated:** January 15, 2026
 
 ---
 
 ## Pre-Course Checklist
 
-- [x] Develop preliminary project idea (Functional Genomics ML System)
+- [x] Develop preliminary project idea (coding-variant pathogenicity classification)
 - [x] Complete project abstract (half-page)
 - [ ] Research potential faculty advisors (Bioinformatics, Computational Biology, Genomics)
 - [ ] Contact faculty advisors (aim for 3-5 professors)
@@ -136,25 +136,24 @@
 ## Weekly Progress Log
 
 ### Week 1 (January 2026)
-**Date:** January 7, 2026
+**Date:** January 7–15, 2026
 
 **Accomplished:**
 - Received course welcome and syllabus
 - Set up project workspace and documentation structure
-- ✅ Finalized project idea: ML-Driven Functional Genomics System for Regulatory Variant Interpretation
-- ✅ Completed detailed project proposal and abstract
-- ✅ Documented objectives, methodology, data sources, timeline, and deliverables
+- ✅ Finalized project scope: coding-variant pathogenicity classification using ESM2 embeddings
+- ✅ Updated proposal/README/architecture docs to match the coding-variant scope
+- ✅ Renamed repository to match the updated scope and updated local remote
 
 **Next Steps:**
-- Research faculty advisors in Bioinformatics, Computational Biology, Genomics, ML for biological data
-- Prepare personalized emails emphasizing "ML-heavy capstone with deployable system component"
-- Send advisor outreach emails (target: 3-5 faculty)
-- Review course syllabus in detail
-- Begin literature review (DeepSEA, Basenji, ENCODE documentation)
+- Obtain the curated coding-variant dataset details (location/format/schema)
+- Implement ingestion + QC checks and create a versioned processed dataset artifact (Parquet)
+- Decide and implement a gene/protein-aware split strategy to prevent leakage
+- Begin baseline model training on embeddings (logistic regression / random forest)
 
 **Blockers/Questions:**
-- Need to identify specific faculty members to contact
-- Should confirm HiPerGator access or cloud computing credits
+- Confirm how gene/protein identifiers are represented in the curated dataset (gene symbol vs transcript vs protein ID)
+- Confirm expected embedding format (vector dim; storage as columns vs arrays)
 
 ---
 
@@ -186,39 +185,29 @@
 
 **Next Meeting:**
 ### Key Papers
-
-1. Zhou, J., & Troyanskaya, O. G. (2015). Predicting effects of noncoding variants with deep learning–based sequence model. *Nature Methods* (DeepSEA)
-2. Kelley, D. R., et al. (2018). Sequential regulatory activity prediction across chromosomes with convolutional neural networks. *Genome Research* (Basenji)
-3. ENCODE Project Consortium. (2012). An integrated encyclopedia of DNA elements in the human genome. *Nature*
-4. Ji, Y., et al. (2021). DNABERT: pre-trained Bidirectional Encoder Representations from Transformers model for DNA-language in genome. *Bioinformatics*
+1. ESM-2 (protein language model embeddings) — primary representation approach
+2. Gene/protein-aware evaluation and leakage control for variant prediction
+3. Baseline classifiers for tabular embeddings (logistic regression, random forest)
 
 ### Datasets
-
-1. ENCODE Portal: https://www.encodeproject.org/ (chromatin accessibility, TF binding)
-2. GTEx Portal: https://gtexportal.org/ (eQTL data)
-3. DeepSEA benchmark: http://deepsea.princeton.edu/
-4. 1000 Genomes: https://www.internationalgenome.org/
+1. Public curated coding-variant dataset (provided by Dylan)
+2. ClinVar (optional validation/standardization): https://www.ncbi.nlm.nih.gov/clinvar/
+3. Ensembl VEP (optional consequence annotation): https://www.ensembl.org/info/docs/tools/vep/
 
 ### Tools & Frameworks
 
 1. PyTorch / TensorFlow (deep learning)
 2. scikit-learn (baseline models, evaluation)
-3. pysam, pybedtools (genomics data processing)
+3. pandas, numpy, pyarrow (data processing)
 4. MLflow / Weights & Biases (experiment tracking)
 5. Streamlit / Gradio (demo interface)
 6. HiPerGator (UF Research Computing) or Google Colab Pro
 
 ### Useful Links
 
-1. ENCODE documentation: https://www.encodeproject.org/data-standards/
-2. Genomic Data Science Specialization (Coursera)
-3. Papers with Code - Genomics: https://paperswithcode.com/area/biology
-4. Deep Learning for Genomics GitHub repos
-1. 
-
-### Useful Links
-
-1. 
+1. ESM / ESM-2 project resources (overview + model cards)
+2. ClinVar documentation and release notes
+3. Ensembl VEP docs (if used for optional annotation)
 
 ---
 

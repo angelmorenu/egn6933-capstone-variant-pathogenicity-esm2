@@ -13,7 +13,7 @@
 
 **Team Lead:** Angel Morenu (Individual Project)
 
-**Collaboration:** Dylan Tan will provide access to a public curated pathogenicity dataset of coding variants with embedding-style features (ESM2 protein language model embeddings), as well as guidance and reference code on handling these feature datasets.
+**Collaboration:** Dylan Tan has provided access to a public curated pathogenicity dataset of coding variants with embedding-style features (ESM2 protein language model embeddings), as well as guidance and reference code on handling these feature datasets.
 
 ---
 

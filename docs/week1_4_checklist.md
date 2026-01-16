@@ -1,44 +1,45 @@
 # Weeks 1–4 Execution Checklist
 
-This is a concrete Week 1–4 plan aligned to the proposal: ClinVar → non-coding subset → EDA → split/window decisions.
+This is a concrete Week 1–4 plan aligned to the updated proposal: curated coding-variant dataset (labels + ESM2 embeddings) → ingestion/QC → leakage-aware splits → baseline training readiness.
 
-## Week 1 — Data in hand + basic profiling
-- [ ] Confirm ClinVar source file exists locally
-  - Target: `data/clinvar/variant_summary.txt.gz` (symlink/copy from `../Project/data/clinvar/variant_summary.txt.gz`)
-- [ ] Load file in notebook and validate schema (columns, dtypes, missingness)
-- [ ] Define the label mapping rules (high-confidence only)
-  - Keep: Pathogenic/Likely pathogenic vs Benign/Likely benign
+## Week 1 — Dataset access + ingestion skeleton
+- [ ] Obtain dataset location from Dylan (HiPerGator path or share link)
+- [ ] Confirm raw dataset format(s) and contents
+  - Expected: coding variants + pathogenicity labels + ESM2 embeddings (+ optional gene/protein identifiers)
+- [ ] Create/validate ingestion output artifact(s)
+  - Target: `data/processed/<dataset_name>_strict.parquet`
+  - Columns to confirm: variant ID fields, label, embedding vector, and any gene/protein fields
+- [ ] Define label mapping rules (high-confidence only)
+  - Keep: Pathogenic/Likely Pathogenic vs Benign/Likely Benign
   - Exclude: VUS, conflicting interpretations
-- [ ] Decide which assembly to use for the first pass (default: GRCh38)
-- [ ] Create a first-pass filtered table (CSV/Parquet) with:
-  - `Chromosome`, `Start/Stop` or `PositionVCF`, `ReferenceAlleleVCF`, `AlternateAlleleVCF`, `Assembly`, label fields
+- [ ] Run basic QC
+  - No NaNs in embeddings, consistent embedding dimensionality, no duplicate variant IDs
 
-## Week 2 — Non-coding definition + VEP plan
-- [ ] Finalize what counts as “non-coding” consequences (list of consequence terms)
-- [ ] Decide VEP execution strategy
-  - Local VEP vs online vs Docker
-  - Inputs/outputs: variant coordinates + assembly
-- [ ] Create a small pilot set (e.g., 1k–5k variants) and run VEP end-to-end
-- [ ] Validate that consequences look correct (spot-check)
+## Week 2 — Metadata standardization + (optional) validation
+- [ ] Standardize variant identifiers/metadata
+  - Minimal fields: `chrom`, `pos`, `ref`, `alt`, assembly (if present)
+  - Preferred: transcript/gene/protein identifiers if provided
+- [ ] Decide whether to use ClinVar/VEP as a secondary validation pathway
+  - Goal: confirm coding consequences / reconcile labels (optional)
+- [ ] Create a small pilot split (e.g., 1k–5k variants) and validate end-to-end training table creation
 
-## Week 3 — Split and window design decisions
-- [ ] Implement chromosome holdout split plan on the curated labeled table
-  - Use `docs/chromosome_split_design.md` + `scripts/make_splits.py`
+## Week 3 — Leakage-aware split design
+- [ ] Implement gene/protein-aware train/val/test split plan
+  - Constraint: all variants from the same gene/protein stay in one split
 - [ ] Sanity-check split sizes and positive rates (train/val/test)
-- [ ] Decide the initial sequence window sizes to test
-  - Planned sweep: 101 bp, 201 bp, 501 bp
-- [ ] Define the variant representation needed for sequence extraction
-  - `chrom`, `pos`, `ref`, `alt`, assembly
+- [ ] Write split artifacts to disk
+  - Store a `split` column in the processed Parquet and/or save split index files
 
-## Week 4 — EDA deliverables + readiness for embeddings
+## Week 4 — EDA deliverables + baseline readiness
 - [ ] Finalize the curated dataset artifact
-  - Parquet with `label` (0/1) and `split` (train/val/test)
-- [ ] Produce core EDA plots/tables:
+  - Parquet with `label` (0/1), `split` (train/val/test), and embedding vectors
+- [ ] Produce core EDA plots/tables
   - Class balance overall + by split
-  - Distribution by chromosome
-  - Assembly breakdown (confirm single-assembly focus)
-  - Variant types (SNV vs indel) and decision on whether to keep indels in v1
-- [ ] Write down “go/no-go” checks before embedding generation
+  - Distribution by gene/protein (if available)
+  - Embedding dimensionality checks and summary statistics
+  - Variant-type breakdown (e.g., missense, nonsense, frameshift) if available
+- [ ] Write down “go/no-go” checks before model training
   - Minimum positive class size
-  - No obvious leakage or duplicated variants across splits
-  - Non-coding filter behaving as intended
+  - No leakage across gene/protein splits
+  - No duplicate variants across splits
+  - Embeddings present and consistent for all retained samples
