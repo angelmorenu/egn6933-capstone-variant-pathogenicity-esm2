@@ -21,7 +21,8 @@ This is a concrete Week 1–4 plan aligned to the updated proposal: curated codi
   - Preferred: transcript/gene/protein identifiers if provided
 - [ ] Decide whether to use ClinVar/VEP as a secondary validation pathway
   - Goal: confirm coding consequences / reconcile labels (optional)
-- [ ] Create a small pilot split (e.g., 1k–5k variants) and validate end-to-end training table creation
+- [ ] Create a small pilot table (e.g., 1k–5k variants) and validate end-to-end training table creation
+  - Acceptable artifact for Week 2: `TSV + NumPy embeddings` (Parquet also works in the `egn6933-variant-embeddings` env)
 
 ## Week 3 — Leakage-aware split design
 - [ ] Implement gene/protein-aware train/val/test split plan

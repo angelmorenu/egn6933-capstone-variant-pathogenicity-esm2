@@ -49,7 +49,8 @@ egn6933-capstone-variant-pathogenicity-esm2/
 ├── scripts/                           # Data processing and utility scripts
 │   ├── inspect_esm2_primateai_pkl.py  # ESM2 dataset schema inspection
 │   ├── ingest_esm2_primateai.py       # ESM2 to Parquet ingestion with label policies
-│   └── make_pickle_id_to_chrposrefalt.py  # Map pickle numeric ID -> chr_pos_ref_alt via ClinVar
+│   ├── make_pickle_id_to_chrposrefalt.py  # Map pickle numeric ID -> chr_pos_ref_alt via ClinVar
+│   └── build_week2_training_table.py  # Week 2: strict labels + canonical keys -> trainable table
 ├── src/                               # Core project source code
 │   ├── variant_classifier/            # Main package
 │   └── variant_embeddings/            # Embedding utilities
@@ -123,6 +124,14 @@ python scripts/make_pickle_id_to_chrposrefalt.py --max-ids 100000000
 # Outputs:
 # - data/processed/pickle_id_to_chrposrefalt.tsv
 # - data/processed/pickle_id_to_chrposrefalt_ambiguous.tsv
+
+# Week 2: build a trainable table with canonical keys + strict labels
+# (writes TSV + NumPy embeddings)
+python scripts/build_week2_training_table.py --max-rows 5000
+# Outputs:
+# - data/processed/week2_training_table_strict.tsv.gz
+# - data/processed/week2_training_table_strict_embeddings.npy
+# - data/processed/week2_training_table_strict_meta.json
 ```
 
 #### Model Training (Coming Soon)
@@ -152,8 +161,9 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 - ✅ Validate Parquet outputs (strict variants, 0 NaN embeddings)
 - ✅ Set up git repository with clean commit history
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
-- 🔄 Design gene/protein-aware split strategy
 - 🔄 Join curated embeddings to canonical variant keys and lock label mapping/exclusions (target: Week 2)
+- 🔄 Design leakage-aware gene/protein-aware split strategy (target: Week 3)
+
 
 ### Phase 2: Feature Engineering & Baselines (Weeks 5-8)
 - [ ] Finalize feature set (ESM2 embedding dimensions and QC)
