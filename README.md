@@ -13,14 +13,14 @@
 
 ## Overview
 
-This capstone project develops a machine learning pipeline to classify missense variants as pathogenic versus benign using pretrained protein language model embeddings (ESM2). The work supports precision medicine workflows by enabling computational prioritization of variants for downstream experimental follow-up.
+This capstone project develops a machine learning pipeline to classify missense variants as pathogenic versus benign using pretrained protein language model embeddings (ESM2). The working dataset is a post-quality-control, missense-only ClinVar-derived table (ClinVar 20240805) provided by Dr. Fan’s lab (Dylan Tan), plus aligned ESM2 embeddings.
 
 ## Project Information
 
 **Objective:** Build a reproducible, prediction-focused ML pipeline for binary classification of missense variants using embedding-style features from protein language models.
 
 **Key Components:**
-- **Data:** ClinVar (public variant interpretations; missense-only after consequence filtering)
+- **Data:** ClinVar-derived missense-only dataset (post-QC) provided by Dr. Fan/Dylan; ClinVar downloads are used for reference/mapping
 - **Features:** Precomputed ESM2 protein language model embeddings (with optional feature generation if needed)
 - **Models:** Logistic Regression, Random Forest, and optional shallow MLP
 - **Evaluation:** AUROC/AUPRC with gene/protein-aware holdout splitting to prevent data leakage
@@ -48,12 +48,14 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── inspect_esm2_primateai_pkl.py  # ESM2 dataset schema inspection
 │   ├── ingest_esm2_primateai.py       # ESM2 to Parquet ingestion with label policies
 │   ├── make_pickle_id_to_chrposrefalt.py  # Map pickle numeric ID -> chr_pos_ref_alt via ClinVar
-│   └── build_week2_training_table.py  # Week 2: strict labels + canonical keys -> trainable table
+│   ├── build_week2_training_table.py  # Week 2: build trainable TSV+NPY (defaults to cleaned missense_strict labels when present)
+│   ├── sanity_check_week2_table.py    # Sanity checks for Week 2 artifacts
+│   └── build_clinvar_labels_from_vcf.py  # Optional: reproduce label counts from a ClinVar VCF
 ├── src/                               # Core project source code
 │   ├── variant_classifier/            # Main package
 │   └── variant_embeddings/            # Embedding utilities
 ├── notebooks/                         # Jupyter notebooks for EDA and prototyping
-├── config/                            # Configuration files (hyperparameters, splits)
+├── config/                            # Configuration files (hyperparameters, splits, decisions)
 ├── tests/                            # Unit and integration tests
 ├── data/                             # Data directory (excluded from git)
 │   ├── raw/                          # Original downloads (if applicable)
@@ -69,7 +71,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 └── LICENSE                           # MIT License
 ```
 
-**Note:** Data files, trained models, research PDFs, and generated outputs are excluded from version control per `.gitignore`.
+**Note:** Data files (e.g., Dylan’s large `.pkl`/`.txt`, `data/processed/*.npy`), trained models, and generated outputs are excluded from version control per `.gitignore`.
 
 ## Getting Started
 
@@ -100,8 +102,10 @@ egn6933-capstone-variant-pathogenicity-esm2/
 3. **Download data:**
    ```bash
    # Data is not included in the repository.
-   # Primary source: ClinVar.
-   # Some existing ingestion scripts also support a prototype embedding dataset (optional).
+   # Required for Week 2 build (local files):
+   # - data/Dylan Tan/esm2_selected_features.pkl
+   # - data/Dylan Tan/clinvar_20240805.missense_strict_updated.txt (or ...missense_strict.txt)
+   # - data/clinvar/variant_summary.txt.gz
    ```
 
 ### Usage
@@ -124,31 +128,29 @@ python scripts/make_pickle_id_to_chrposrefalt.py --max-ids 100000000
 # - data/processed/pickle_id_to_chrposrefalt.tsv
 # - data/processed/pickle_id_to_chrposrefalt_ambiguous.tsv
 
-# Week 2: build a trainable table with canonical keys + strict labels
-# (writes TSV + NumPy embeddings)
-python scripts/build_week2_training_table.py --max-rows 5000
+# Week 2: build a trainable table (writes TSV + NumPy embeddings + meta)
+# Default behavior: if Dylan's cleaned missense_strict table exists under data/Dylan Tan/, it is used as the label source.
+conda run -n egn6933-variant-embeddings python scripts/build_week2_training_table.py --max-rows 5000
 # Outputs:
 # - data/processed/week2_training_table_strict.tsv.gz
 # - data/processed/week2_training_table_strict_embeddings.npy
 # - data/processed/week2_training_table_strict_meta.json
+
+# Sanity-check the artifacts (alignment, duplicates, label balance)
+conda run -n egn6933-variant-embeddings python scripts/sanity_check_week2_table.py \
+   --prefix data/processed/week2_training_table_strict
 ```
 
 #### Model Training (Coming Soon)
 ```bash
-# Train baseline models
-python src/train.py --config configs/baseline.yaml
-
-# Evaluate on test set
-python src/evaluate.py --model-path models/best_model.pkl --test-data data/processed/test.parquet
+# Training entrypoints and config files will be added in Week 3.
+# (TBD)
 ```
 
 #### Variant Scoring (Coming Soon)
 ```bash
-# Streamlit web app
-streamlit run app/main.py
-
-# CLI scoring
-python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh38
+# Scoring interfaces (Streamlit + CLI) will be added later in the semester.
+# (TBD)
 ```
 
 ## Project Timeline
@@ -160,7 +162,7 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 - ✅ Validate Parquet outputs (strict variants, 0 NaN embeddings)
 - ✅ Set up git repository with clean commit history
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
-- 🔄 Build missense-only training table and lock label mapping/exclusions (target: Week 2)
+- ✅ Build missense-only training table and lock label mapping/exclusions (Week 2)
 - 🔄 Design leakage-aware gene/protein-aware split strategy (target: Week 3)
 
 
@@ -190,6 +192,8 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 - [x] **Jan 15, 2026:** GitHub repository initialized and pushed
 - [x] **Jan 16, 2026:** Confirmed pickle numeric ID matches ClinVar VariationID; generated chr_pos_ref_alt mapping
 - [x] **Jan 20, 2026:** Proposal updated to missense-only scope and ClinVar-primary framing
+- [x] **Jan 20, 2026:** Week 2 5k training artifacts generated (TSV + embeddings + meta) using cleaned missense_strict labels by default
+- [x] **Jan 20, 2026:** Added sanity checks for Week 2 artifacts (alignment/duplicates/balance)
 - [ ] **Week 4:** Complete gene/protein-aware split design
 - [ ] **Week 8:** Baseline models trained and evaluated
 - [ ] **Week 12:** Final model selection and statistical validation
@@ -224,6 +228,7 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 
 - **ESM / ESM2:** https://github.com/facebookresearch/esm
 - **ClinVar:** https://www.ncbi.nlm.nih.gov/clinvar/
+- **ClinVar-derived cleaned missense dataset (post-QC):** Provided by Dr. Fan’s lab (Dylan Tan), derived from ClinVar 20240805
 - **Ensembl VEP (optional):** https://www.ensembl.org/info/docs/tools/vep/
 
 ## References
@@ -251,7 +256,7 @@ Email: angel.morenu@ufl.edu
 
 ## Acknowledgments
 
-- **Dylan Tan** for providing precomputed embedding features and reference code used during early prototyping
+- **Dylan Tan** for providing the cleaned missense dataset and aligned precomputed embedding features
 - **Dr. Xiao Fan** for project guidance and access to HiPerGator computational resources
 - **ClinVar** and **Ensembl** for providing public genomic variant databases and annotation tools
 
