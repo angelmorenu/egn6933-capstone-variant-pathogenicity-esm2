@@ -1,4 +1,4 @@
-# Machine Learning Classification of Pathogenic vs. Benign Coding Genetic Variants
+# Machine Learning Classification of Pathogenic vs. Benign Missense Variants
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -13,20 +13,18 @@
 
 ## Overview
 
-This capstone project develops a machine learning pipeline to classify coding genetic variants as pathogenic versus benign using pretrained protein language model embeddings (ESM2). The work supports precision medicine workflows by enabling computational prioritization of variants for downstream experimental follow-up.
+This capstone project develops a machine learning pipeline to classify missense variants as pathogenic versus benign using pretrained protein language model embeddings (ESM2). The work supports precision medicine workflows by enabling computational prioritization of variants for downstream experimental follow-up.
 
 ## Project Information
 
-**Objective:** Build a reproducible, prediction-focused ML pipeline for binary classification of coding variants using embedding-style features from protein language models.
+**Objective:** Build a reproducible, prediction-focused ML pipeline for binary classification of missense variants using embedding-style features from protein language models.
 
 **Key Components:**
-- **Data:** Public curated coding-variant pathogenicity dataset (Dr. Fan’s group; shared via Dylan Tan)
+- **Data:** ClinVar (public variant interpretations; missense-only after consequence filtering)
 - **Features:** Precomputed ESM2 protein language model embeddings (with optional feature generation if needed)
 - **Models:** Logistic Regression, Random Forest, and optional shallow MLP
 - **Evaluation:** AUROC/AUPRC with gene/protein-aware holdout splitting to prevent data leakage
 - **Deployment:** Streamlit web application and command-line interface for variant scoring
-
-**Collaboration:** Dylan Tan provides the public curated dataset and guidance/reference code for working with embedding-style feature tables.
 
 ## Features
 
@@ -99,15 +97,16 @@ egn6933-capstone-variant-pathogenicity-esm2/
    pip install -e .
    ```
 
-3. **Obtain the curated dataset:**
+3. **Download data:**
    ```bash
    # Data is not included in the repository.
-   # Use the provided ingestion scripts once you have the dataset path.
+   # Primary source: ClinVar.
+   # Some existing ingestion scripts also support a prototype embedding dataset (optional).
    ```
 
 ### Usage
 
-#### Data Ingestion (Curated ESM2 Dataset)
+#### Data Ingestion (Prototype Embedding Dataset)
 ```bash
 # Inspect ESM2 PKL schema
 python scripts/inspect_esm2_primateai_pkl.py \
@@ -119,7 +118,7 @@ python scripts/ingest_esm2_primateai.py \
     --output-parquet data/processed/esm2_primateai.parquet \
     --label-policy strict
 
-# Build mapping from Dylan pickle numeric ID (ClinVar VariationID) -> chr_pos_ref_alt (default: GRCh38 SNVs)
+# Build mapping from pickle numeric ID (ClinVar VariationID) -> chr_pos_ref_alt (default: GRCh38 SNVs)
 python scripts/make_pickle_id_to_chrposrefalt.py --max-ids 100000000
 # Outputs:
 # - data/processed/pickle_id_to_chrposrefalt.tsv
@@ -155,13 +154,13 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 ## Project Timeline
 
 ### Phase 1: Data & Infrastructure (Weeks 1-4) ✅
-- ✅ Obtain and validate curated ESM2 feature dataset
+- ✅ Define ClinVar-based data plan (missense-only scope)
 - ✅ Define label filtering (strict pathogenic/benign)
-- ✅ Ingest curated ESM2 dataset with flexible label policies
+- ✅ Prototype ingestion and label-policy tooling
 - ✅ Validate Parquet outputs (strict variants, 0 NaN embeddings)
 - ✅ Set up git repository with clean commit history
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
-- 🔄 Join curated embeddings to canonical variant keys and lock label mapping/exclusions (target: Week 2)
+- 🔄 Build missense-only training table and lock label mapping/exclusions (target: Week 2)
 - 🔄 Design leakage-aware gene/protein-aware split strategy (target: Week 3)
 
 
@@ -190,6 +189,7 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 - [x] **Jan 15, 2026:** Proposal updated to coding-variant scope
 - [x] **Jan 15, 2026:** GitHub repository initialized and pushed
 - [x] **Jan 16, 2026:** Confirmed pickle numeric ID matches ClinVar VariationID; generated chr_pos_ref_alt mapping
+- [x] **Jan 20, 2026:** Proposal updated to missense-only scope and ClinVar-primary framing
 - [ ] **Week 4:** Complete gene/protein-aware split design
 - [ ] **Week 8:** Baseline models trained and evaluated
 - [ ] **Week 12:** Final model selection and statistical validation
@@ -198,15 +198,15 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 ## Technical Stack
 
 **Languages & Frameworks:**
-- Python 3.11+ (core language)
+- Python 3.11.14 (core language)
 - PyTorch or TensorFlow (optional, for MLP)
 - scikit-learn (baseline models, metrics)
-- pandas, numpy (data manipulation)
-- pyarrow (Parquet I/O)
+- pandas 2.3.3, NumPy 1.26.4 (data manipulation)
+- pyarrow 22.0.0 (Parquet I/O)
 
 **Bioinformatics Tools:**
 - ESM / ESM2 (protein language model embeddings)
-- ClinVar API/FTP (optional upstream/validation)
+- ClinVar API/FTP
 - Ensembl VEP (optional consequence standardization)
 
 **Deployment:**
@@ -222,9 +222,8 @@ python -m variant_classifier.score --variant chr17:41234567:A:G --assembly GRCh3
 
 ## Data Sources
 
-- **Public curated coding-variant dataset:** Dr. Fan’s group (shared via Dylan Tan)
 - **ESM / ESM2:** https://github.com/facebookresearch/esm
-- **ClinVar (optional):** https://www.ncbi.nlm.nih.gov/clinvar/
+- **ClinVar:** https://www.ncbi.nlm.nih.gov/clinvar/
 - **Ensembl VEP (optional):** https://www.ensembl.org/info/docs/tools/vep/
 
 ## References
@@ -252,7 +251,7 @@ Email: angel.morenu@ufl.edu
 
 ## Acknowledgments
 
-- **Dylan Tan** for providing precomputed ESM2 embedding features and reference code for coding variants
+- **Dylan Tan** for providing precomputed embedding features and reference code used during early prototyping
 - **Dr. Xiao Fan** for project guidance and access to HiPerGator computational resources
 - **ClinVar** and **Ensembl** for providing public genomic variant databases and annotation tools
 

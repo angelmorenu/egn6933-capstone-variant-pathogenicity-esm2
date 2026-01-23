@@ -1,26 +1,26 @@
 # Weeks 1–4 Execution Checklist
 
-This is a concrete Week 1–4 plan aligned to the updated proposal: curated coding-variant dataset (labels + ESM2 embeddings) → ingestion/QC → leakage-aware splits → baseline training readiness.
+This is a concrete Week 1–4 plan aligned to the updated proposal: ClinVar (labels) + VEP missense filtering (+ embeddings) → ingestion/QC → leakage-aware splits → baseline training readiness.
 
 ## Week 1 — Dataset access + ingestion skeleton
-- [ ] Obtain dataset location from Dylan (HiPerGator path or share link)
-- [ ] Confirm raw dataset format(s) and contents
-  - Expected: coding variants + pathogenicity labels + ESM2 embeddings (+ optional gene/protein identifiers)
+- [ ] Download ClinVar release data (VCF / variant summary, as needed)
+- [ ] Confirm raw data format(s) and fields needed for a joinable table
+  - Expected: variant identifiers (e.g., VariationID and/or VCF fields), clinical significance, review status (if used), and assembly
 - [ ] Create/validate ingestion output artifact(s)
-  - Target: `data/processed/<dataset_name>_strict.parquet`
-  - Columns to confirm: variant ID fields, label, embedding vector, and any gene/protein fields
+  - Target: `data/processed/clinvar_missense_strict.parquet` (or equivalent)
+  - Columns to confirm: canonical variant fields, label, and any gene/protein/transcript identifiers (if available)
 - [ ] Define label mapping rules (high-confidence only)
   - Keep: Pathogenic/Likely Pathogenic vs Benign/Likely Benign
   - Exclude: VUS, conflicting interpretations
 - [ ] Run basic QC
-  - No NaNs in embeddings, consistent embedding dimensionality, no duplicate variant IDs
+  - No duplicate variant IDs, consistent canonical variant representation
 
 ## Week 2 — Metadata standardization + (optional) validation
 - [ ] Standardize variant identifiers/metadata
   - Minimal fields: `chrom`, `pos`, `ref`, `alt`, assembly (if present)
   - Preferred: transcript/gene/protein identifiers if provided
-- [ ] Decide whether to use ClinVar/VEP as a secondary validation pathway
-  - Goal: confirm coding consequences / reconcile labels (optional)
+- [ ] Annotate consequences with Ensembl VEP and filter to missense-only
+  - Keep: `missense_variant` (or equivalent missense annotation)
 - [ ] Create a small pilot table (e.g., 1k–5k variants) and validate end-to-end training table creation
   - Acceptable artifact for Week 2: `TSV + NumPy embeddings` (Parquet also works in the `egn6933-variant-embeddings` env)
 
@@ -38,7 +38,7 @@ This is a concrete Week 1–4 plan aligned to the updated proposal: curated codi
   - Class balance overall + by split
   - Distribution by gene/protein (if available)
   - Embedding dimensionality checks and summary statistics
-  - Variant-type breakdown (e.g., missense, nonsense, frameshift) if available
+  - Missense consequence QC summary (e.g., retained fraction after filtering)
 - [ ] Write down “go/no-go” checks before model training
   - Minimum positive class size
   - No leakage across gene/protein splits
