@@ -1,12 +1,3 @@
----
-geometry: margin=1in
-fontsize: 12pt
-linestretch: 1.15
-header-includes:
-	- "\\usepackage{ragged2e}"
-	- "\\justifying"
----
-
 # M.S. Applied Data Science: Capstone Project Proposal
 
 **Due Date:** January 25, 2026  
