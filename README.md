@@ -172,8 +172,18 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
 - ✅ Build missense-only training table and lock label mapping/exclusions (Week 2)
 - 🔄 Design leakage-aware gene/protein-aware split strategy (target: Week 3)
-- 
-
+- [ ] Finalize the curated dataset artifact (target: Week 4)
+  - Parquet with `label` (0/1), `split` (train/val/test), and embedding vectors
+- [ ] Produce core EDA plots/tables
+  - Class balance overall + by split
+  - Distribution by gene/protein (if available)
+  - Embedding dimensionality checks and summary statistics
+  - Missense consequence QC summary (e.g., retained fraction after filtering)
+- [ ] Write down “go/no-go” checks before model training
+  - Minimum positive class size
+  - No leakage across gene/protein splits
+  - No duplicate variants across splits
+  - Embeddings present and consistent for all retained samples
 
 ### Phase 2: Feature Engineering & Baselines (Weeks 5-8)
 - [ ] Finalize feature set (ESM2 embedding dimensions and QC)
@@ -203,7 +213,8 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
 - [x] **Jan 20, 2026:** Proposal updated to missense-only scope and ClinVar-primary framing
 - [x] **Jan 20, 2026:** Week 2 5k training artifacts generated (TSV + embeddings + meta) using cleaned missense_strict labels by default
 - [x] **Jan 20, 2026:** Added sanity checks for Week 2 artifacts (alignment/duplicates/balance)
-- [ ] **Week 4:** Complete gene/protein-aware split design
+- [x] **Jan 26, 2026:** Implemented leakage-aware (gene-grouped) train/val/test splits and wrote split artifacts (Parquet + index files + meta)
+- [ ] **Week 4:** Finalize curated dataset artifact (Parquet with `label`, `split`, and embeddings)
 - [ ] **Week 8:** Baseline models trained and evaluated
 - [ ] **Week 12:** Final model selection and statistical validation
 - [ ] **Week 15:** Deployment and final presentation
