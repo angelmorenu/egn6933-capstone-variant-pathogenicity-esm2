@@ -50,6 +50,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── make_pickle_id_to_chrposrefalt.py  # Map pickle numeric ID -> chr_pos_ref_alt via ClinVar
 │   ├── build_week2_training_table.py  # Week 2: build trainable TSV+NPY (defaults to cleaned missense_strict labels when present)
 │   ├── sanity_check_week2_table.py    # Sanity checks for Week 2 artifacts
+│   ├── make_week3_splits.py           # Week 3: leakage-aware (gene-grouped) train/val/test splits
 │   └── build_clinvar_labels_from_vcf.py  # Optional: reproduce label counts from a ClinVar VCF
 ├── src/                               # Core project source code
 │   ├── variant_classifier/            # Main package
@@ -139,6 +140,13 @@ conda run -n egn6933-variant-embeddings python scripts/build_week2_training_tabl
 # Sanity-check the artifacts (alignment, duplicates, label balance)
 conda run -n egn6933-variant-embeddings python scripts/sanity_check_week2_table.py \
    --prefix data/processed/week2_training_table_strict
+
+# Week 3: leakage-aware gene/protein-aware splits (all variants from the same gene stay in one split)
+# Writes a Parquet with a `split` column + split index files.
+conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
+   --input-tsv data/processed/week2_training_table_strict.tsv.gz \
+   --clinvar-variant-summary data/clinvar/variant_summary.txt.gz \
+   --out-prefix data/processed/week2_training_table_strict
 ```
 
 #### Model Training (Coming Soon)
@@ -164,6 +172,7 @@ conda run -n egn6933-variant-embeddings python scripts/sanity_check_week2_table.
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
 - ✅ Build missense-only training table and lock label mapping/exclusions (Week 2)
 - 🔄 Design leakage-aware gene/protein-aware split strategy (target: Week 3)
+- 
 
 
 ### Phase 2: Feature Engineering & Baselines (Weeks 5-8)
