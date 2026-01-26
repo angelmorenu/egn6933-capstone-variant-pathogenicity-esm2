@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-# Week 3: Build leakage-aware train/val/test splits based on ClinVar GeneSymbol
-# All variants from the same gene are assigned to the same split
-# Reads Week-2 TSV, maps keys to GeneSymbol via ClinVar variant_summary.txt.gz,
-# then writes split artifacts to disk.
+# Week 3: Build leakage-aware train/val/test splits grouped by gene/protein identifier
 import argparse
 import csv
 import gzip
@@ -17,12 +14,13 @@ import numpy as np
 import pandas as pd
 
 """
-This script reads the Week-2 TSV (canonical chr_pos_ref_alt + labels), maps keys to
-GeneSymbol via ClinVar variant_summary.txt.gz, then writes split artifacts to disk.
+This script reads the Week-2 TSV (canonical chr_pos_ref_alt + labels), maps keys to a
+ClinVar gene identifier (GeneSymbol or GeneID) via ClinVar variant_summary.txt.gz, then
+writes split artifacts to disk.
 
 Expected inputs
 - Week-2 TSV.GZ produced by scripts/build_week2_training_table.py
-- ClinVar variant_summary.txt.gz (used to map chr_pos_ref_alt -> GeneSymbol)
+- ClinVar variant_summary.txt.gz (used to map chr_pos_ref_alt -> GeneSymbol/GeneID)
 
 Output
 - <prefix>_splits.parquet
@@ -30,12 +28,12 @@ Output
 - <prefix>_splits_meta.json
 
 Notes
-- Variants with missing GeneSymbol mapping can be handled via --missing-gene-policy.
+- Variants with missing gene mapping can be handled via --missing-gene-policy.
     'key' groups each missing row by its own key (no leakage, minimal coupling).
     'unknown' groups all missing rows together.
     'error' fails if any are missing.
     
-- Split assignment attempts to balance label distribution across splits.
+- Split assignment is group-aware and targets split sizes (default).
 """
 
 # Check if allele is a single-nucleotide variant (A, C, G, T) 
@@ -48,9 +46,9 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
             "Week 3: Build leakage-aware train/val/test splits. "
-            "All variants from the same gene (ClinVar GeneSymbol) are assigned to the same split. "
-            "This script reads the Week-2 TSV (canonical chr_pos_ref_alt + labels), maps keys to GeneSymbol via "
-            "ClinVar variant_summary.txt.gz, then writes split artifacts to disk."
+            "All variants from the same gene/protein identifier are assigned to the same split. "
+            "This script reads the Week-2 TSV (canonical chr_pos_ref_alt + labels), maps keys to a ClinVar gene identifier "
+            "(GeneSymbol or GeneID) via ClinVar variant_summary.txt.gz, then writes split artifacts to disk."
         )
     )
     p.add_argument(
@@ -61,7 +59,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--clinvar-variant-summary",
         default="data/clinvar/variant_summary.txt.gz",
-        help="ClinVar variant_summary.txt.gz (used to map chr_pos_ref_alt -> GeneSymbol)",
+        help="ClinVar variant_summary.txt.gz (used to map chr_pos_ref_alt -> GeneSymbol/GeneID)",
+    )
+    p.add_argument(
+        "--clinvar-group-field",
+        choices=["GeneSymbol", "GeneID"],
+        default="GeneSymbol",
+        help="ClinVar field to group by when building leakage-aware splits (GeneSymbol or GeneID).",
     )
     p.add_argument(
         "--assembly",
@@ -72,7 +76,7 @@ def parse_args() -> argparse.Namespace:
         "--group-column",
         default="",
         help=(
-            "Optional override: group on an existing input TSV column instead of ClinVar GeneSymbol. "
+            "Optional override: group on an existing input TSV column instead of ClinVar GeneSymbol/GeneID. "
             "If set, no ClinVar scan is performed."
         ),
     )
@@ -107,9 +111,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--missing-gene-policy",
         choices=["key", "unknown", "error"],
-        default="key",
+        default="error",
         help=(
-            "What to do if a chr_pos_ref_alt key can't be mapped to a GeneSymbol. "
+            "What to do if a chr_pos_ref_alt key can't be mapped to the chosen ClinVar group field. "
             "'key' groups each missing row by its own key (no leakage, minimal coupling). "
             "'unknown' groups all missing rows together. 'error' fails if any are missing."
         ),
@@ -133,17 +137,21 @@ def load_week2_table(path: Path) -> pd.DataFrame:
     df["label"] = pd.to_numeric(df["label"], errors="raise").astype(int)
     return df
 
-# Map chr_pos_ref_alt keys to GeneSymbol using ClinVar variant_summary.txt.gz 
-def map_key_to_gene_symbol(
+# Map chr_pos_ref_alt keys to a ClinVar grouping field using ClinVar variant_summary.txt.gz
+def map_key_to_group_value(
     variant_summary_gz: Path,
     needed_keys: set[str],
     assembly: str,
+    group_field: str,
 ) -> dict[str, str]:
-    key_to_gene: dict[str, str] = {}
+    if group_field not in {"GeneSymbol", "GeneID"}:
+        raise ValueError(f"Unsupported group_field: {group_field}")
+
+    key_to_group: dict[str, str] = {}
     with gzip.open(variant_summary_gz, "rt", newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
         if reader.fieldnames is None:
-            return key_to_gene
+            return key_to_group
 
         for row in reader:
             if assembly:
@@ -164,18 +172,18 @@ def map_key_to_gene_symbol(
             if key not in needed_keys:
                 continue
 
-            gene = (row.get("GeneSymbol") or "").strip()
-            if not gene:
+            group_value = (row.get(group_field) or "").strip()
+            if not group_value:
                 continue
 
-            # If duplicates exist, keep first non-empty gene symbol.
-            if key not in key_to_gene:
-                key_to_gene[key] = gene
+            # If duplicates exist, keep first non-empty value.
+            if key not in key_to_group:
+                key_to_group[key] = group_value
 
-            if len(key_to_gene) >= len(needed_keys):
+            if len(key_to_group) >= len(needed_keys):
                 break
 
-    return key_to_gene
+    return key_to_group
 
 # Assign groups to splits while balancing label distribution 
 def assign_groups_to_splits(
@@ -340,27 +348,30 @@ def main() -> None:
         if group_col not in df.columns:
             raise ValueError(f"--group-column '{group_col}' not found in input TSV columns: {list(df.columns)}")
     else:
-        group_col = "GeneSymbol"
+        group_col = args.clinvar_group_field
         needed_keys = set(df["chr_pos_ref_alt"].astype(str).tolist())
-        key_to_gene = map_key_to_gene_symbol(
-            clinvar_variant_summary, needed_keys=needed_keys, assembly=args.assembly
+        key_to_group = map_key_to_group_value(
+            clinvar_variant_summary,
+            needed_keys=needed_keys,
+            assembly=args.assembly,
+            group_field=group_col,
         )
-        gene = df["chr_pos_ref_alt"].map(key_to_gene)
+        group_value = df["chr_pos_ref_alt"].map(key_to_group)
 
-        missing = gene.isna()
+        missing = group_value.isna()
         missing_gene_rows = int(missing.sum())
         if missing_gene_rows:
             if args.missing_gene_policy == "error":
                 raise RuntimeError(
-                    f"Missing GeneSymbol mapping for {missing_gene_rows} rows. "
+                    f"Missing {group_col} mapping for {missing_gene_rows} rows. "
                     "Re-run with --missing-gene-policy key|unknown or verify ClinVar inputs."
                 )
             elif args.missing_gene_policy == "unknown":
-                gene = gene.fillna("UNKNOWN")
+                group_value = group_value.fillna("UNKNOWN")
             else:  # key
-                gene = gene.fillna(df.loc[missing, "chr_pos_ref_alt"])
+                group_value = group_value.fillna(df.loc[missing, "chr_pos_ref_alt"])
 
-        df[group_col] = gene.astype(str)
+        df[group_col] = group_value.astype(str)
 
     split_groups = assign_groups_to_splits(
         df[group_col],
