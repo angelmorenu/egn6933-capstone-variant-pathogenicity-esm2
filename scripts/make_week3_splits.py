@@ -119,6 +119,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     p.add_argument(
+        "--missing-report-path",
+        default="auto",
+        help=(
+            "Where to write a TSV report of rows that are missing a ClinVar group mapping. "
+            "Default 'auto' writes <out_prefix>_missing_group_mapping.tsv. "
+            "Use 'none' to disable writing the report."
+        ),
+    )
+    p.add_argument(
         "--out-prefix",
         default="data/processed/week2_training_table_strict",
         help=(
@@ -126,6 +135,43 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     return p.parse_args()
+
+# Resolve missing report path based on user input 
+def resolve_missing_report_path(repo_root: Path, out_prefix: Path, raw: str) -> Optional[Path]:
+    v = (raw or "").strip()
+    if not v or v.lower() == "auto":
+        return Path(str(out_prefix) + "_missing_group_mapping.tsv")
+    if v.lower() in {"none", "false", "0"}:
+        return None
+    p = Path(v)
+    return p if p.is_absolute() else (repo_root / p)
+
+# Write a report of rows missing group mapping 
+def write_missing_mapping_report(
+    df: pd.DataFrame,
+    missing_mask: pd.Series,
+    out_path: Path,
+    group_field: str,
+) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    cols: list[str] = []
+    for c in [
+        "pickle_ID",
+        "chr_pos_ref_alt",
+        "Chromosome",
+        "PositionVCF",
+        "ReferenceAlleleVCF",
+        "AlternateAlleleVCF",
+        "Pathogenicity",
+        "label",
+    ]:
+        if c in df.columns:
+            cols.append(c)
+
+    report = df.loc[missing_mask, cols].copy()
+    report.insert(0, "missing_group_field", group_field)
+    report.to_csv(out_path, sep="\t", index=False)
 
 # Load Week-2 TSV into DataFrame
 def load_week2_table(path: Path) -> pd.DataFrame:
@@ -338,6 +384,7 @@ def main() -> None:
     input_tsv = repo_root / args.input_tsv
     clinvar_variant_summary = repo_root / args.clinvar_variant_summary
     out_prefix = repo_root / args.out_prefix
+    missing_report_path = resolve_missing_report_path(repo_root, out_prefix, args.missing_report_path)
 
     df = load_week2_table(input_tsv)
 
@@ -361,6 +408,15 @@ def main() -> None:
         missing = group_value.isna()
         missing_gene_rows = int(missing.sum())
         if missing_gene_rows:
+            if missing_report_path is not None:
+                write_missing_mapping_report(
+                    df=df,
+                    missing_mask=missing,
+                    out_path=missing_report_path,
+                    group_field=group_col,
+                )
+                print(f"Wrote missing-mapping report: {missing_report_path}")
+
             if args.missing_gene_policy == "error":
                 raise RuntimeError(
                     f"Missing {group_col} mapping for {missing_gene_rows} rows. "
