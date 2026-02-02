@@ -101,11 +101,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=13, help="Random seed for group shuffling")
     p.add_argument(
         "--method",
-        choices=["size", "size+label"],
+        choices=["size", "size+label", "size+rate", "search"],
         default="size",
         help=(
             "Split assignment method. 'size' targets split sizes only (recommended default). "
-            "'size+label' also tries to match overall positive rate, but may be constrained by large groups."
+            "'size+label' tries to match positive counts relative to expected split positives. "
+            "'size+rate' tries to match overall positive rate per split (may struggle if splits start empty). "
+            "'search' uses a local-search improvement step to jointly target split sizes + overall positive rate."
         ),
     )
     p.add_argument(
@@ -133,6 +135,27 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Output prefix (writes <prefix>_splits.parquet, <prefix>_{train,val,test}_idx.npy, <prefix>_splits_meta.json)"
         ),
+    )
+    p.add_argument(
+        "--min-groups-per-split",
+        type=int,
+        default=5,
+        help=(
+            "Minimum number of groups per split when using --method size+label (best-effort). "
+            "If total groups are insufficient, this is reduced automatically."
+        ),
+    )
+    p.add_argument(
+        "--min-split-rows",
+        type=int,
+        default=200,
+        help="Minimum rows per split for --method search (enforced via penalty).",
+    )
+    p.add_argument(
+        "--search-iters",
+        type=int,
+        default=8000,
+        help="Iterations for --method search local improvement.",
     )
     return p.parse_args()
 
@@ -240,6 +263,9 @@ def assign_groups_to_splits(
     test_frac: float,
     seed: int,
     method: str,
+    min_groups_per_split: int,
+    min_split_rows: int = 200,
+    search_iters: int = 8000,
 ) -> dict[str, set[str]]:
     fracs = np.array([train_frac, val_frac, test_frac], dtype=float)
     if np.any(fracs < 0):
@@ -292,17 +318,121 @@ def assign_groups_to_splits(
 
         return split_groups
 
-    # method == "size+label": also try to match positive-rate targets.
+    if method == "search":
+        # Start from size-based assignment to hit row targets, then do local search to improve
+        # positive-rate similarity while keeping sizes reasonable.
+        init = assign_groups_to_splits(
+            groups=groups,
+            labels=labels,
+            train_frac=train_frac,
+            val_frac=val_frac,
+            test_frac=test_frac,
+            seed=seed,
+            method="size",
+            min_groups_per_split=0,
+        )
+        split_groups = {k: set(v) for k, v in init.items()}
+
+        # Precompute group stats for fast scoring.
+        group_to_rows = {str(r["group"]): int(r["rows"]) for r in group_items}
+        group_to_pos = {str(r["group"]): int(r["positives"]) for r in group_items}
+
+        def stats_for(sg: dict[str, set[str]]) -> tuple[dict[str, int], dict[str, int]]:
+            sr = {k: 0 for k in split_names}
+            sp = {k: 0 for k in split_names}
+            for k in split_names:
+                for g in sg[k]:
+                    sr[k] += group_to_rows[g]
+                    sp[k] += group_to_pos[g]
+            return sr, sp
+
+        min_groups = int(max(0, min_groups_per_split))
+        if min_groups > 0:
+            total_groups = int(len(group_items))
+            min_groups = min(min_groups, total_groups // 3)
+
+        split_rows, split_pos = stats_for(split_groups)
+
+        def objective(sr: dict[str, int], sp: dict[str, int], sg: dict[str, set[str]]) -> float:
+            total = float(total_rows) if total_rows else 1.0
+            obj = 0.0
+            for k in split_names:
+                tr = split_target_rows[k]
+                obj += abs(sr[k] - tr) / total
+                rate = (sp[k] / sr[k]) if sr[k] else 0.0
+                obj += abs(rate - overall_pos_rate)
+                if sr[k] < min_split_rows:
+                    obj += 5.0 * (min_split_rows - sr[k]) / total
+                if min_groups > 0 and len(sg[k]) < min_groups:
+                    obj += 2.0 * (min_groups - len(sg[k])) / float(min_groups)
+            return obj
+
+        rng = random.Random(seed)
+        current = objective(split_rows, split_pos, split_groups)
+
+        all_groups = list(group_to_rows.keys())
+        for _ in range(int(max(0, search_iters))):
+            g = rng.choice(all_groups)
+            src = next((k for k in split_names if g in split_groups[k]), None)
+            if src is None:
+                continue
+            dst = rng.choice([k for k in split_names if k != src])
+
+            # Enforce minimum-groups constraint.
+            if min_groups > 0 and len(split_groups[src]) <= min_groups:
+                continue
+
+            # Propose move.
+            split_groups[src].remove(g)
+            split_groups[dst].add(g)
+            split_rows[src] -= group_to_rows[g]
+            split_rows[dst] += group_to_rows[g]
+            split_pos[src] -= group_to_pos[g]
+            split_pos[dst] += group_to_pos[g]
+
+            cand = objective(split_rows, split_pos, split_groups)
+            if cand <= current:
+                current = cand
+                continue
+
+            # Revert.
+            split_groups[dst].remove(g)
+            split_groups[src].add(g)
+            split_rows[src] += group_to_rows[g]
+            split_rows[dst] -= group_to_rows[g]
+            split_pos[src] += group_to_pos[g]
+            split_pos[dst] -= group_to_pos[g]
+
+        return split_groups
+
+    # Non-trivial methods: add label-awareness.
     w_rows = 1.0
     w_pos = 0.5
-    for rec in group_items:
+    w_rate = 1.0
+    min_groups = int(max(0, min_groups_per_split))
+    if min_groups > 0:
+        total_groups = int(len(group_items))
+        min_groups = min(min_groups, total_groups // 3)
+
+    total_to_assign = len(group_items)
+    for i, rec in enumerate(group_items):
         group_key = str(rec["group"])
         group_rows = int(rec["rows"])
         group_pos = int(rec["positives"])
 
+        forced_splits: set[str] = set()
+        if min_groups > 0:
+            remaining = total_to_assign - i
+            needed = {k: max(0, min_groups - len(split_groups[k])) for k in split_names}
+            if sum(needed.values()) >= remaining:
+                forced_splits = {k for k, n in needed.items() if n > 0}
+
         best_split: Optional[str] = None
         best_score: Optional[float] = None
         for k in split_names:
+            if forced_splits and k not in forced_splits:
+                continue
+
             target_rows = split_target_rows[k]
             target_pos = split_target_pos[k]
             if target_rows <= 0:
@@ -312,12 +442,22 @@ def assign_groups_to_splits(
             new_pos = split_pos[k] + group_pos
 
             row_err = abs(1.0 - (new_rows / target_rows))
-            if target_pos > 0:
-                pos_err = abs(1.0 - (new_pos / target_pos))
-            else:
-                pos_err = 0.0
+            if method == "size+label":
+                if target_pos > 0:
+                    pos_err = abs(1.0 - (new_pos / target_pos))
+                else:
+                    pos_err = 0.0
+                label_term = w_pos * pos_err
+            else:  # method == "size+rate"
+                new_rate = (new_pos / new_rows) if new_rows else 0.0
+                rate_err = abs(new_rate - overall_pos_rate)
+                label_term = w_rate * rate_err
 
-            score = (w_rows * row_err) + (w_pos * pos_err)
+            group_penalty = 0.0
+            if min_groups > 0 and (len(split_groups[k]) + 1) < min_groups:
+                group_penalty = (min_groups - (len(split_groups[k]) + 1)) / float(min_groups)
+
+            score = (w_rows * row_err) + label_term + (2.0 * group_penalty)
             if best_score is None or score < best_score:
                 best_score = score
                 best_split = k
@@ -437,6 +577,9 @@ def main() -> None:
         test_frac=args.test_frac,
         seed=args.seed,
         method=args.method,
+        min_groups_per_split=args.min_groups_per_split,
+        min_split_rows=args.min_split_rows,
+        search_iters=args.search_iters,
     )
 
     def _group_to_split(g: str) -> str:

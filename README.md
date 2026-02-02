@@ -23,7 +23,7 @@ This capstone project develops a machine learning pipeline to classify missense 
 - **Data:** ClinVar-derived missense-only dataset (post-QC) provided by Dr. Fan/Dylan; ClinVar downloads are used for reference/mapping
 - **Features:** Precomputed ESM2 protein language model embeddings (with optional feature generation if needed)
 - **Models:** Logistic Regression, Random Forest, and optional shallow MLP
-- **Evaluation:** AUROC/AUPRC with gene/protein-aware holdout splitting to prevent data leakage
+- **Evaluation:** AUROC/AUPRC with gene/protein-aware holdout splitting to prevent data leakage; the test split is treated as **generalization to unseen genes/proteins** (a biological extrapolation set rather than IID data)
 - **Deployment:** Streamlit web application and command-line interface for variant scoring
 
 ## Features
@@ -51,6 +51,8 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── build_week2_training_table.py  # Week 2: build trainable TSV+NPY (defaults to cleaned missense_strict labels when present)
 │   ├── sanity_check_week2_table.py    # Sanity checks for Week 2 artifacts
 │   ├── make_week3_splits.py           # Week 3: leakage-aware (gene-grouped) train/val/test splits
+│   ├── make_week4_curated_dataset.py  # Week 4: curated Parquet (label + split + embedding)
+│   ├── week4_eda.py                   # Week 4: EDA + go/no-go checks
 │   └── build_clinvar_labels_from_vcf.py  # Optional: reproduce label counts from a ClinVar VCF
 ├── src/                               # Core project source code
 │   ├── variant_classifier/            # Main package
@@ -68,7 +70,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 ├── docs/                             # Additional documentation
 ├── .gitignore                        # Git exclusions (data, models, PDFs)
 ├── pyproject.toml                    # Python project configuration
-├── environment.yml                    # Conda environment specification
+├── environment.yml                   # Conda environment specification
 └── LICENSE                           # MIT License
 ```
 
@@ -147,12 +149,58 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
    --input-tsv data/processed/week2_training_table_strict.tsv.gz \
    --clinvar-variant-summary data/clinvar/variant_summary.txt.gz \
    --out-prefix data/processed/week2_training_table_strict
+
+**Splitting rationale (gene-disjoint + prevalence-aware):** All variants from the same mapped gene are kept in a single split to reduce information leakage. For small pilots with few genes and highly skewed per-gene label rates, a purely size-based greedy assignment can produce large train/val/test prevalence differences (which can distort AUPRC and threshold selection). For the 5k pilot, the recommended setting is the prevalence-aware local-search method:
+
+```bash
+conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
+   --method search \
+   --min-groups-per-split 5 \
+   --min-split-rows 400 \
+   --search-iters 20000 \
+   --out-prefix data/processed/week2_training_table_strict
+```
+
+# Week 4: build a single curated dataset Parquet (label + split + embedding vectors)
+conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_dataset.py
+# Outputs:
+# - data/processed/week4_curated_dataset.parquet
+# - data/processed/week4_curated_dataset_meta.json
+
+# Week 4: EDA + go/no-go checks (writes tables/plot + a JSON report)
+conda run -n egn6933-variant-embeddings python scripts/week4_eda.py
+# Outputs:
+# - data/processed/week4_eda/counts_by_split.tsv
+# - data/processed/week4_eda/unique_genes_by_split.tsv
+# - data/processed/week4_eda/positive_rate_by_split.png
+# - data/processed/week4_eda/go_no_go.json
 ```
 
 #### Model Training (Coming Soon)
 ```bash
-# Training entrypoints and config files will be added in Week 3.
-# (TBD)
+# Minimal baseline (Logistic Regression) using the curated dataset Parquet.
+python scripts/baseline_train_eval.py \
+   --data data/processed/week4_curated_dataset.parquet \
+   --out-json results/baseline_logreg_metrics.json
+
+# Controlled nonlinear baseline: shallow Random Forest (gene-disjoint evaluation).
+python scripts/baseline_train_eval.py \
+   --model rf \
+   --rf-max-depth 4 \
+   --rf-n-estimators 200 \
+   --data data/processed/week4_curated_dataset.parquet \
+   --out-json results/baseline_rf_report.json
+
+# Recommended: C sweep (L2 strength), optional calibration on val, bootstrap CIs on test, and plots.
+python scripts/baseline_train_eval.py \
+   --data data/processed/week4_curated_dataset.parquet \
+   --c-grid 0.01,0.1,1,10,100 \
+   --select-metric auprc \
+   --calibration platt \
+   --bootstrap-iters 1000 \
+   --plot-pr results/pr_curves_val_vs_test.png \
+   --plot-scores-test results/test_score_distributions.png \
+   --out-json results/baseline_logreg_report.json
 ```
 
 #### Variant Scoring (Coming Soon)
@@ -171,15 +219,15 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
 - ✅ Set up git repository with clean commit history
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
 - ✅ Build missense-only training table and lock label mapping/exclusions (Week 2)
-- 🔄 Design leakage-aware gene/protein-aware split strategy (target: Week 3)
-- [ ] Finalize the curated dataset artifact (target: Week 4)
+- ✅ Design leakage-aware gene/protein-aware split strategy (target: Week 3)
+- [x] Finalize the curated dataset artifact (target: Week 4)
   - Parquet with `label` (0/1), `split` (train/val/test), and embedding vectors
-- [ ] Produce core EDA plots/tables
+- [x] Produce core EDA plots/tables
   - Class balance overall + by split
   - Distribution by gene/protein (if available)
   - Embedding dimensionality checks and summary statistics
   - Missense consequence QC summary (e.g., retained fraction after filtering)
-- [ ] Write down “go/no-go” checks before model training
+- [x] Write down “go/no-go” checks before model training
   - Minimum positive class size
   - No leakage across gene/protein splits
   - No duplicate variants across splits
@@ -214,7 +262,7 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
 - [x] **Jan 20, 2026:** Week 2 5k training artifacts generated (TSV + embeddings + meta) using cleaned missense_strict labels by default
 - [x] **Jan 20, 2026:** Added sanity checks for Week 2 artifacts (alignment/duplicates/balance)
 - [x] **Jan 26, 2026:** Implemented leakage-aware (gene-grouped) train/val/test splits and wrote split artifacts (Parquet + index files + meta)
-- [ ] **Week 4:** Finalize curated dataset artifact (Parquet with `label`, `split`, and embeddings)
+- [x] **Week 4:** Finalized curated dataset artifact + Week 4 EDA/go-no-go checks
 - [ ] **Week 8:** Baseline models trained and evaluated
 - [ ] **Week 12:** Final model selection and statistical validation
 - [ ] **Week 15:** Deployment and final presentation

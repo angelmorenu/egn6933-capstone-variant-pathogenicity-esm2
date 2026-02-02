@@ -1,6 +1,6 @@
 # M.S. Applied Data Science: Capstone Project Proposal
 
-**Due Date:** January 25, 2026  
+**Due Date:** February 4, 2026  
 **Student Name:** Angel Morenu  
 **Course:** EGN 6933 – Project in Applied Data Science  
 **Project Type:** Individual
@@ -23,7 +23,7 @@ This capstone project focuses on a practical, prediction-based machine learning 
 
 The stakeholders for this work include rare disease researchers looking to speed up variant interpretation, clinical genomics professionals who need computational tools to assist with decision-making, and computational biologists building scalable variant analysis pipelines. The project contributes to the broader mission of precision medicine by helping reduce the manual effort involved in variant classification and ensuring that limited lab resources are directed toward the most promising leads.
 
-From an ethical and societal standpoint, the project uses only public, de-identified genetic data from ClinVar (Landrum et al., 2018). It makes clear that the model’s predictions are not to be used for clinical diagnosis without further lab testing and expert review, and that clinical pathogenicity categories follow widely used standards (Richards et al., 2015). The project also addresses common data challenges, such as class imbalance and uncertain labels, by removing ambiguous cases and using performance metrics that remain meaningful even when classes are uneven.
+From an ethical and societal standpoint, the project uses de-identified genetic variant records from ClinVar (Landrum et al., 2018) and a lab-provided, post-quality-control missense-only table (and aligned embedding features) derived from ClinVar. No participant recruitment or private health information is involved. The project makes clear that model predictions are not to be used for clinical diagnosis without further lab testing and expert review, and that clinical pathogenicity categories follow widely used standards (Richards et al., 2015). The project also addresses common data challenges, such as class imbalance and uncertain labels, by removing ambiguous cases and using performance metrics that remain meaningful even when classes are uneven.
 
 This work combines applied data science methods, including machine learning, statistical analysis, and reproducible coding practices, with genomics and healthcare workflows. It demonstrates how computational tools can play a meaningful role in supporting real-world clinical research and decision-making.
 
@@ -33,15 +33,17 @@ This work combines applied data science methods, including machine learning, sta
 
 The primary data source for this project is ClinVar (https://www.ncbi.nlm.nih.gov/clinvar/), a public archive of variant interpretations and supporting evidence (Landrum et al., 2018). The project will download ClinVar releases and construct a labeled training table by applying a strict label policy based on ClinVar clinical significance categories and filtering decisions that are fully documented and reproducible.
 
-To restrict scope and reduce heterogeneity, the dataset will include missense variants only. Variant consequences will be derived using Ensembl Variant Effect Predictor (VEP) (McLaren et al., 2016), and only variants annotated as missense (e.g., VEP consequence `missense_variant`) will be retained.
+In practice, the project will also use a lab-provided, post-quality-control missense-only ClinVar-derived table curated by Dr. Fan’s lab (Dylan Tan) and aligned precomputed protein language model embeddings. This derivative dataset is used as a pragmatic, quality-controlled starting point that is already aligned to the embedding feature matrix. ClinVar remains the authoritative source of record for provenance, identifiers, and reference mapping.
+
+To restrict the coverage and reduce heterogeneity, the dataset will include only missense variants. When using the lab-provided, post-QC, missense-only table, this restriction is enforced by that curation and is aligned with the embedding feature matrix. Ensembl Variant Effect Predictor (VEP) (McLaren et al., 2016) may be used as an optional verification/standardization step (e.g., checking for `missense_variant`) when reproducing the dataset from raw ClinVar files or as an additional quality-control check.
 
 To ensure a strong training signal, clinical labels will be clearly defined. Variants labeled as Pathogenic or Likely Pathogenic will be grouped as pathogenic, while those labeled Benign or Likely Benign will be assigned to the benign class. Variants labeled as Uncertain Significance or those with conflicting submissions will be excluded to avoid label noise and maintain a clear separation between positive and negative classes.
 
-Only missense coding variants will be included. Ensembl VEP will be used to verify and standardize this consequence definition across the dataset.
+Only missense coding variants will be included. Ensembl VEP can be used to verify and standardize this consequence definition across the dataset when needed.
 
 The features used for model training will come from protein language model embeddings. The project will compute and cache ESM2-style embeddings from protein sequence context to produce fixed-length vectors suitable for use with traditional machine learning models (Rives et al., 2021; Lin et al., 2023).
 
-Data handling will follow software engineering best practices. The labeled dataset will be saved in versioned Parquet files that record key metadata such as the ClinVar release date, VEP annotation settings, the embedding model/version and dimensionality, split seeds/grouping keys, and label filtering choices. All processing steps will be fully scripted and deterministic, ensuring that others can recreate the dataset exactly from the original ClinVar source. Embedding files will be saved in standardized formats to support efficient and reproducible model training without needing to recompute embeddings every time.
+Data handling will follow software engineering best practices. The labeled dataset will be saved in versioned Parquet files that record key metadata such as the ClinVar release date, VEP annotation settings, the embedding model/version and dimensionality, split seeds/grouping keys, and label filtering choices. All processing steps will be fully scripted and deterministic. When the lab-provided post-QC table/embeddings are used, the full pipeline is reproducible given access to those inputs, and the project records sufficient provenance (ClinVar release identifiers, filtering policies, and mapping keys) to make the data lineage explicit. Embedding files will be saved in standardized formats to support efficient and reproducible model training without needing to recompute embeddings every time.
 
 ClinVar is public and de-identified, and the project does not involve participant recruitment or private health information. The project will be executed in accordance with university research and data-handling best practices. The computational workflow will be thoroughly documented and sufficient implementation detail will be provided that other researchers can reproduce the analysis using public data sources. The project is structured as a research proof-of-concept and explicitly disclaims clinical utility; model predictions are intended for research-driven variant prioritization rather than clinical diagnostic use.
 
