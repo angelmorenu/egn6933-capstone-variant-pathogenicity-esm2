@@ -53,6 +53,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── make_week3_splits.py           # Week 3: leakage-aware (gene-grouped) train/val/test splits
 │   ├── make_week4_curated_dataset.py  # Week 4: curated Parquet (label + split + embedding)
 │   ├── week4_eda.py                   # Week 4: EDA + go/no-go checks
+│   ├── baseline_train_eval.py          # Baseline train/eval (LR/RF) + calibration, bootstrap CIs, plots
 │   └── build_clinvar_labels_from_vcf.py  # Optional: reproduce label counts from a ClinVar VCF
 ├── src/                               # Core project source code
 │   ├── variant_classifier/            # Main package
@@ -74,7 +75,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 └── LICENSE                           # MIT License
 ```
 
-**Note:** Data files (e.g., Dylan’s large `.pkl`/`.txt`, `data/processed/*.npy`), trained models, and generated outputs are excluded from version control per `.gitignore`.
+**Note:** Data files (e.g., Dylan’s large `.pkl`/`.txt`, `data/processed/*.npy`), trained models, and generated outputs (including `results/`) are excluded from version control per `.gitignore`.
 
 ## Getting Started
 
@@ -150,6 +151,8 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
    --clinvar-variant-summary data/clinvar/variant_summary.txt.gz \
    --out-prefix data/processed/week2_training_table_strict
 
+```
+
 **Splitting rationale (gene-disjoint + prevalence-aware):** All variants from the same mapped gene are kept in a single split to reduce information leakage. For small pilots with few genes and highly skewed per-gene label rates, a purely size-based greedy assignment can produce large train/val/test prevalence differences (which can distort AUPRC and threshold selection). For the 5k pilot, the recommended setting is the prevalence-aware local-search method:
 
 ```bash
@@ -161,6 +164,22 @@ conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
    --out-prefix data/processed/week2_training_table_strict
 ```
 
+To sanity-check robustness to the split seed (still gene-disjoint), rerun with a different `--seed` and rebuild Week 4:
+
+```bash
+conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
+   --method search \
+   --min-groups-per-split 5 \
+   --min-split-rows 400 \
+   --search-iters 20000 \
+   --seed 37 \
+   --out-prefix data/processed/week2_training_table_strict
+
+conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_dataset.py
+conda run -n egn6933-variant-embeddings python scripts/week4_eda.py
+```
+
+```bash
 # Week 4: build a single curated dataset Parquet (label + split + embedding vectors)
 conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_dataset.py
 # Outputs:
@@ -176,7 +195,7 @@ conda run -n egn6933-variant-embeddings python scripts/week4_eda.py
 # - data/processed/week4_eda/go_no_go.json
 ```
 
-#### Model Training (Coming Soon)
+#### Model Training (Baselines)
 ```bash
 # Minimal baseline (Logistic Regression) using the curated dataset Parquet.
 python scripts/baseline_train_eval.py \
@@ -199,6 +218,7 @@ python scripts/baseline_train_eval.py \
    --calibration platt \
    --bootstrap-iters 1000 \
    --plot-pr results/pr_curves_val_vs_test.png \
+   --plot-reliability results/reliability_test.png \
    --plot-scores-test results/test_score_distributions.png \
    --out-json results/baseline_logreg_report.json
 ```
@@ -220,14 +240,14 @@ python scripts/baseline_train_eval.py \
 - ✅ Confirm canonical ID mapping (pickle numeric ID ⇄ ClinVar VariationID ⇄ chr_pos_ref_alt)
 - ✅ Build missense-only training table and lock label mapping/exclusions (Week 2)
 - ✅ Design leakage-aware gene/protein-aware split strategy (target: Week 3)
-- [x] Finalize the curated dataset artifact (target: Week 4)
+- ✅ Finalize the curated dataset artifact (target: Week 4)
   - Parquet with `label` (0/1), `split` (train/val/test), and embedding vectors
-- [x] Produce core EDA plots/tables
+- ✅ Produce core EDA plots/tables
   - Class balance overall + by split
   - Distribution by gene/protein (if available)
   - Embedding dimensionality checks and summary statistics
   - Missense consequence QC summary (e.g., retained fraction after filtering)
-- [x] Write down “go/no-go” checks before model training
+- ✅ Write down “go/no-go” checks before model training
   - Minimum positive class size
   - No leakage across gene/protein splits
   - No duplicate variants across splits
