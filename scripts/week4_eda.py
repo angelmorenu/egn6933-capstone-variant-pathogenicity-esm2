@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
 # Data class to hold go/no-go report information 
 @dataclass(frozen=True)
 class GoNoGo:
@@ -71,10 +74,14 @@ def main() -> None:
     args = parse_args()
 
     curated_path = Path(args.curated_parquet)
+    if not curated_path.is_absolute():
+        curated_path = _REPO_ROOT / curated_path
     if not curated_path.exists():
         raise FileNotFoundError(f"Missing curated parquet: {curated_path}")
 
     out_dir = Path(args.out_dir)
+    if not out_dir.is_absolute():
+        out_dir = _REPO_ROOT / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_parquet(curated_path)

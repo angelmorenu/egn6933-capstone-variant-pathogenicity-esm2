@@ -22,6 +22,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
 # Data class to hold metadata about the curated dataset
 @dataclass(frozen=True)
 class CuratedMeta:
@@ -62,9 +65,11 @@ def parse_args() -> argparse.Namespace:
     )
     return p.parse_args()
 
-# Helper to check for file existence and iCloud placeholders 
-def _resolve_existing_path(path_str: str) -> Path:
+# Helper to check for file existence and iCloud placeholders
+def _resolve_existing_path(path_str: str, *, base_dir: Path) -> Path:
     p = Path(path_str)
+    if not p.is_absolute():
+        p = base_dir / p
     if p.exists():
         return p
 
@@ -81,12 +86,16 @@ def _resolve_existing_path(path_str: str) -> Path:
 def main() -> None:
     args = parse_args()
 
-    week2_table = _resolve_existing_path(args.week2_table)
-    week2_embeddings = _resolve_existing_path(args.week2_embeddings)
-    week3_splits = _resolve_existing_path(args.week3_splits)
+    week2_table = _resolve_existing_path(args.week2_table, base_dir=_REPO_ROOT)
+    week2_embeddings = _resolve_existing_path(args.week2_embeddings, base_dir=_REPO_ROOT)
+    week3_splits = _resolve_existing_path(args.week3_splits, base_dir=_REPO_ROOT)
 
     out_parquet = Path(args.out_parquet)
     out_meta = Path(args.out_meta)
+    if not out_parquet.is_absolute():
+        out_parquet = _REPO_ROOT / out_parquet
+    if not out_meta.is_absolute():
+        out_meta = _REPO_ROOT / out_meta
     out_parquet.parent.mkdir(parents=True, exist_ok=True)
     out_meta.parent.mkdir(parents=True, exist_ok=True)
 

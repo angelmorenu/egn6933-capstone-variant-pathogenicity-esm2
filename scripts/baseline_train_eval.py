@@ -14,6 +14,18 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _resolve_path(path_str: str | None) -> Path | None:
+    if path_str is None:
+        return None
+    p = Path(path_str)
+    if not p.is_absolute():
+        p = _REPO_ROOT / p
+    return p
+
 '''Train and evaluate a simple baseline model on week4_curated_dataset.parquet.
 Reports AUROC and AUPRC on val/test splits using the `split` column.
 
@@ -314,7 +326,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    data_path = Path(args.data)
+    data_path = _resolve_path(args.data)
+    assert data_path is not None
     if not data_path.exists():
         raise FileNotFoundError(f"Not found: {data_path}")
 
@@ -563,7 +576,9 @@ def main() -> int:
     # Optional plots
     plots: dict[str, str] = {}
     if args.plot_pr:
-        _ensure_parent(args.plot_pr)
+        plot_pr_path = _resolve_path(args.plot_pr)
+        assert plot_pr_path is not None
+        _ensure_parent(str(plot_pr_path))
         val_uncal = model.predict_proba(x[idx_val])[:, 1]
         test_uncal = model.predict_proba(x[idx_test])[:, 1]
         if calibrated_scores_val is not None and calibrated_scores_test is not None:
@@ -574,14 +589,16 @@ def main() -> int:
                 y[idx_test],
                 test_uncal,
                 calibrated_scores_test,
-                args.plot_pr,
+                str(plot_pr_path),
             )
         else:
-            _plot_pr_curves(y[idx_val], val_uncal, y[idx_test], test_uncal, args.plot_pr)
-        plots["pr_curves"] = str(Path(args.plot_pr))
+            _plot_pr_curves(y[idx_val], val_uncal, y[idx_test], test_uncal, str(plot_pr_path))
+        plots["pr_curves"] = str(plot_pr_path)
 
     if args.plot_scores_test:
-        _ensure_parent(args.plot_scores_test)
+        plot_scores_path = _resolve_path(args.plot_scores_test)
+        assert plot_scores_path is not None
+        _ensure_parent(str(plot_scores_path))
         test_scores = (
             calibrated_scores_test
             if calibrated_scores_test is not None
@@ -590,15 +607,17 @@ def main() -> int:
         _plot_score_distributions(
             y[idx_test],
             test_scores,
-            args.plot_scores_test,
+            str(plot_scores_path),
             title="Test score distributions (pos vs neg)",
         )
-        plots["test_score_distributions"] = str(Path(args.plot_scores_test))
+        plots["test_score_distributions"] = str(plot_scores_path)
 
     if args.plot_reliability:
         if calibrated_scores_val is None or calibrated_scores_test is None:
             raise ValueError("--plot-reliability requires --calibration platt|isotonic")
-        _ensure_parent(args.plot_reliability)
+        plot_rel_path = _resolve_path(args.plot_reliability)
+        assert plot_rel_path is not None
+        _ensure_parent(str(plot_rel_path))
         val_uncal = model.predict_proba(x[idx_val])[:, 1]
         test_uncal = model.predict_proba(x[idx_test])[:, 1]
         _plot_reliability_diagram(
@@ -608,10 +627,10 @@ def main() -> int:
             y[idx_test],
             test_uncal,
             calibrated_scores_test,
-            args.plot_reliability,
+            str(plot_rel_path),
             n_bins=int(args.reliability_bins),
         )
-        plots["reliability"] = str(Path(args.plot_reliability))
+        plots["reliability"] = str(plot_rel_path)
 
     report["plots"] = plots if plots else None
 
@@ -646,7 +665,8 @@ def main() -> int:
             )
 
     if args.out_json:
-        out_path = Path(args.out_json)
+        out_path = _resolve_path(args.out_json)
+        assert out_path is not None
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(report, indent=2) + "\n")
         print(f"\nWrote: {out_path}")
