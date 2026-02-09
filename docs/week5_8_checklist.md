@@ -1,0 +1,168 @@
+# Weeks 5–8 Execution Checklist
+
+This is a concrete Week 5–8 plan aligned to Phase 2 (Feature Engineering & Baselines): **baseline model development + robust evaluation** using the Week 4 curated dataset artifact.
+
+**Primary artifact for Weeks 5–8:** `data/processed/week4_curated_dataset.parquet`
+- Required columns: `chr_pos_ref_alt`, `label` (0/1), `split` (train/val/test), `embedding` (vector)
+
+**Primary entrypoint for baselines:** `scripts/baseline_train_eval.py`
+
+---
+
+## Phase 2 (Weeks 5–8) — High-level deliverables (from README)
+
+- [x] Finalize feature set (ESM2 embedding dimensions and QC)
+- [ ] Implement optional missing-feature generation and caching (only if needed)
+- [ ] Train Logistic Regression baseline
+- [ ] Train Random Forest baseline
+- [ ] Initial AUROC/AUPRC evaluation
+
+## Week 5 — Reproduce baselines + lock a “baseline conclusion”
+
+- [x] Confirm Week 4 artifacts exist and are internally consistent
+  - [x] `data/processed/week4_curated_dataset.parquet` loads cleanly (n=5000; duplicate keys=0)
+  - [x] `scripts/week4_eda.py` passes go/no-go checks (GO)
+  - [x] Embedding dimension is consistent (ESM2=2560)
+
+- [x] Run Logistic Regression baseline (uncalibrated)
+  - [x] Saved: `results/week5_logreg_report.json`
+  - [x] Test AUROC=0.7663; Test AUPRC=0.7365
+
+- [x] Run Random Forest baseline (uncalibrated)
+  - [x] Saved: `results/week5_rf_report.json`
+  - [x] Test AUROC=0.9306; Test AUPRC=0.9063
+
+- [x] Run calibration comparison (val-fit calibration; test-evaluated)
+  - [x] Platt calibration report: `results/week5_rf_calibrated_report.json`
+  - [x] Plots: `results/week5_rf_pr_cal_vs_uncal.png`, `results/week5_rf_reliability.png`, `results/week5_test_score_distributions.png`
+  - [x] Rank metrics unchanged; probability quality improved (test Brier 0.1378→0.1181; test log loss 0.4513→0.3804)
+
+- [x] Week 5 deliverable: “Baseline conclusion” (short, explicit)
+  - [x] Winner by **test AUPRC**: shallow RF (AUPRC=0.9063) > logreg (AUPRC=0.7365)
+  - [x] Point estimates recorded above; confidence intervals planned for Week 6
+  - [x] Calibration: Platt improves probability reliability (Brier/log loss) without changing AUROC/AUPRC
+  - [x] Evaluation protocol: gene-disjoint holdout; test reflects generalization to unseen genes/proteins
+
+**Recommended commands (Week 5):**
+```bash
+python scripts/week4_eda.py
+
+python scripts/baseline_train_eval.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --out-json results/week5_logreg_report.json
+
+python scripts/baseline_train_eval.py \
+  --model rf \
+  --rf-max-depth 4 \
+  --rf-n-estimators 200 \
+  --data data/processed/week4_curated_dataset.parquet \
+  --out-json results/week5_rf_report.json
+
+python scripts/baseline_train_eval.py \
+  --model rf \
+  --data data/processed/week4_curated_dataset.parquet \
+  --calibration platt \
+  --plot-pr results/week5_rf_pr_cal_vs_uncal.png \
+  --plot-reliability results/week5_rf_reliability.png \
+  --out-json results/week5_rf_calibrated_report.json
+```
+
+---
+
+## Week 6 — Robustness: split seeds + bootstrap confidence intervals
+
+- [ ] Split seed sensitivity (gene-disjoint)
+  - [ ] Regenerate Week 3 splits with ≥2 different seeds
+  - [ ] Rebuild Week 4 curated Parquet for each seed (separate output filenames)
+  - [ ] Rerun baselines on each seed-specific curated dataset
+  - [ ] Summarize variability of test AUROC/AUPRC across seeds
+
+- [ ] Bootstrap confidence intervals on the held-out test set
+  - [ ] For the best baseline (by AUPRC), compute bootstrapped 95% CIs for AUROC and AUPRC
+  - [ ] Report number of bootstrap iterations and any skipped resamples (if a resample contains only one class)
+
+**Recommended commands (Week 6):**
+```bash
+python scripts/make_week3_splits.py \
+  --seed 13 \
+  --out-prefix data/processed/week2_training_table_strict
+python scripts/make_week4_curated_dataset.py \
+  --out-parquet data/processed/week4_curated_dataset_seed13.parquet \
+  --out-meta data/processed/week4_curated_dataset_seed13_meta.json
+
+python scripts/make_week3_splits.py \
+  --seed 37 \
+  --out-prefix data/processed/week2_training_table_strict
+python scripts/make_week4_curated_dataset.py \
+  --out-parquet data/processed/week4_curated_dataset_seed37.parquet \
+  --out-meta data/processed/week4_curated_dataset_seed37_meta.json
+
+python scripts/baseline_train_eval.py \
+  --model rf \
+  --data data/processed/week4_curated_dataset_seed13.parquet \
+  --bootstrap-iters 1000 \
+  --out-json results/week6_rf_seed13_bootstrap.json
+
+python scripts/baseline_train_eval.py \
+  --model rf \
+  --data data/processed/week4_curated_dataset_seed37.parquet \
+  --bootstrap-iters 1000 \
+  --out-json results/week6_rf_seed37_bootstrap.json
+```
+
+---
+
+## Week 7 — Feature set + hyperparameter selection discipline
+
+(Goal: make baseline selection defensible and reproducible.)
+
+- [ ] Logistic Regression hyperparameter sweep
+  - [ ] Sweep `C` using `--c-grid` and select by validation AUPRC (or another declared metric)
+  - [ ] Confirm scaling is applied (StandardScaler) in the pipeline
+  - [ ] Save the selected `C` and selection metric in the JSON report
+
+- [ ] Random Forest hyperparameters (minimal, controlled)
+  - [ ] Confirm chosen `max_depth`, `n_estimators` reflect “shallow RF” intent
+  - [ ] Optionally test a small grid (keep it small; avoid turning Week 7 into full HPO)
+
+- [ ] Confirm class imbalance handling is explicit
+  - [ ] Record whether class weights are enabled for each model
+  - [ ] If you change weighting, rerun Week 6 seed tests (so comparisons stay apples-to-apples)
+
+**Recommended commands (Week 7):**
+```bash
+python scripts/baseline_train_eval.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --c-grid 0.01,0.1,1,10,100 \
+  --select-metric auprc \
+  --out-json results/week7_logreg_c_sweep.json
+```
+
+---
+
+## Week 8 — Thresholding + “initial methods/results” write-up readiness
+
+- [ ] Choose and document an operating threshold
+  - [ ] Decide the criterion (e.g., maximize F1 on val; or target recall with minimum precision)
+  - [ ] Report val-set threshold and test-set performance at that threshold
+  - [ ] State that threshold is tuned on val only (no test peeking)
+
+- [ ] Calibration decision
+  - [ ] If using calibration, specify method (Platt vs isotonic), fit split (val), and evaluation split (test)
+  - [ ] Include reliability plot and Brier score/log loss (if available in your report)
+
+- [ ] Create a single Week 8 summary artifact (for mid-project review readiness)
+  - [ ] One table: model → test AUROC/AUPRC (+ CIs if available)
+  - [ ] One figure: PR curves (val vs test) for the selected model
+  - [ ] One figure: reliability diagram (if using calibration)
+  - [ ] 5–8 sentence written summary of findings and limitations
+
+---
+
+## Definition of Done for Weeks 5–8
+
+- [ ] Baselines reproducible from the curated Parquet with saved JSON reports in `results/`
+- [ ] Seed robustness demonstrated (≥2 seeds) under gene-disjoint splits
+- [ ] Bootstrapped CIs reported for the selected baseline
+- [ ] Calibration and thresholding decisions documented (val-tuned; test-reported)
+- [ ] Clear baseline conclusion: selected model and why (AUPRC-first)
