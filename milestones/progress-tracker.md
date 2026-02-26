@@ -1,9 +1,12 @@
+> **Annotation (per Dr. Fan's requirement):**
+> For all project phases (Weeks 1–15), it is required that all variants used in the curated dataset are mapped to and can be uniquely identified by Dylan's precomputed ESM2 embeddings. This mapping and identification step is completed for Weeks 1–4 (data acquisition, curation, and QC), and is a standing requirement for all subsequent work (Weeks 5–8: feature engineering, baselines; Weeks 9–15: refinement, evaluation, deployment). All modeling and evaluation steps are contingent on this mapping being present and verifiable.
+
 # Project Milestones & Progress Tracker
 
 **Project Title:** Machine Learning Classification of Pathogenic vs. Benign Coding Genetic Variants Using Protein Language Model Embeddings  
 **Student Name:** Angel Morenu  
 **Faculty Advisor:** Dr. Fan  
-**Last Updated:** February 8, 2026
+**Last Updated:** February 23, 2026
 
 ---
 
@@ -228,25 +231,50 @@
 
 ---
 
+### Week 6
+
+**Date:** February 9–23, 2026
+
+**Accomplished:**
+- Completed robustness checks for leakage-aware evaluation by repeating the gene-disjoint split under multiple random seeds (seed=13 and seed=37) and rebuilding seed-specific curated datasets.
+- Re-ran the baseline Random Forest (RF) model and computed 1000-iteration bootstrap confidence intervals (CIs) on held-out test performance for each seed; results were stable with overlapping CIs.
+- Updated Week 6 documentation and execution guidance to make the workflow reproducible (Week 6 note, checklist updates, and README updates).
+- Met with Dr. Fan (Feb 17) and aligned reporting: AUROC/ROC as the primary metric (AUPRC secondary) and clarified dataset size/splits and filter definitions to be advisor-defensible.
+
+**Next Steps:**
+- Extend seed-sensitivity to additional seeds (e.g., 5–10 total) and summarize the distribution of test AUROC.
+- Run bootstrap-CI evaluation for logistic regression (and optionally calibrated RF) for comparison.
+- Strengthen dataset documentation: explicitly define “high-confidence” filtering and justify canonical transcript mapping choices.
+
+**Blockers/Questions:**
+- None blocking.
+
+---
+
 ## Advisor Meeting Notes
 
 ### Meeting 1
-**Date:** [TBD]
+**Date:** February 17, 2026
 
-**Attendees:** Angel Morenu, Dr. Fan (advisor), Dylan Tan (dataset/orientation)
+**Attendees:** Angel Morenu, Dr. Fan (advisor)
 
 **Topics Discussed:**
-- Curated missense dataset location/format/schema and how to load large PKLs safely (line-by-line).
-- Identifier conventions and join keys (notably `chr_pos_ref_alt`).
-- Embedding variants (baseline ESM2 vs coordinates-augmented variant) and keeping modeling scope controlled.
-- Evaluation design emphasizing leakage-aware gene-disjoint generalization.
+- Scope control: keep the capstone feasible within ~3–4 months by focusing on a clear prediction task (avoid overly broad, mechanism-heavy goals).
+- Teaming: consider pairing with a peer who has stronger programming experience (you remain the project lead) if it improves execution speed and code quality.
+- Evaluation and metrics: use ROC/AUROC as the primary metric for the curated ClinVar-based dataset; keep AUPRC as secondary.
+- Dataset clarity: confirmed the curated dataset size is n≈5,000 total variants with an ~80/10/10 train/val/test split (≈500 test rows) under gene-disjoint splitting.
+- Documentation expectations: be prepared to explain the filtering definitions (what “high-confidence” means) and why canonical transcripts are used.
 
 **Action Items:**
-- Keep dataset orientation documented (`docs/dataset_orientation_dylan_tan.md`).
-- Use `data/processed/week4_curated_dataset.parquet` as the modeling “source of truth.”
-- Establish/retain a strong reference baseline (Week 5 shallow RF + optional Platt calibration).
+- Keep AUROC-first reporting consistent across artifacts (README, notes, and evaluation scripts).
+- Update/expand dataset documentation to precisely define the filtering criteria and canonical transcript rationale.
+- If beneficial, identify a potential teammate and define roles early to keep scope and execution on track.
+- Continue robustness checks (split-seed sensitivity + bootstrap CIs) and be ready to justify dataset size and split design.
 
-**Next Meeting:** [TBD]
+**Next Meeting:** TBD (after incorporating metric/reporting updates and documenting filters)
+
+---
+
 ### Key Papers
 1. ESM-2 (protein language model embeddings) — primary representation approach
 2. Gene/protein-aware evaluation and leakage control for variant prediction

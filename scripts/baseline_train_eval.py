@@ -1,3 +1,7 @@
+"""
+Annotation (per Dr. Fan's requirement):
+All variants used for model training and evaluation must be mapped to and uniquely identified by Dylan's precomputed ESM2 embeddings. This script expects the input dataset to contain a column 'embedding' with a unique, valid embedding vector for every variant, ensuring full traceability and compliance with project requirements.
+"""
 import argparse
 import json
 from pathlib import Path

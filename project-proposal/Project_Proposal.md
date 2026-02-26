@@ -107,7 +107,7 @@ This is an individual capstone project. Feedback will be iteratively solicited f
 
 ## 8. New Knowledge Acquisition
 
-This project offers hands-on experience with a number of modern computational genomics and machine learning methods. It shows how pretrained protein language models (ESM2-style embeddings) may be used practically for feature extraction in a variant pathogenicity prediction task, relating fundamental transfer learning ideas to domain-specific bioinformatics problems. Second, the initiative promotes fluency with common genomic variant representations and workflows by developing literacy in biological data sources and annotation tools (ClinVar and Ensembl VEP, when used for validation and standardization). Lastly, the project exemplifies professional software engineering techniques (typed code, reproducible environments, modular architecture, unit testing) applied to a machine learning context, preparing the student for collaborative research environments and industry-scale data science roles.
+This project offers hands-on experience with a number of modern computational genomics and machine learning methods. It shows how pretrained protein language models (ESM2-style embeddings) may be used practically for feature extraction in a variant pathogenicity prediction task, relating fundamental transfer learning ideas to domain-specific bioinformatics problems. Second, the initiative promotes fluency with common genomic variant representations and workflows by developing literacy in biological data sources and annotation tools (ClinVar and Ensembl VEP, when used for validation and standardization). Lastly, the project exemplifies professional software engineering techniques (typed code, reproducible environments, modular architecture, unit testing) applied to a machine learning context, preparing the student for collaborative research environments and industry-scale data science roles. 
 
 ---
 
@@ -127,7 +127,8 @@ Lin, Z., Akin, H., Rao, R., Hie, B., Zhu, Z., Lu, W., and others (2023). "Evolut
 
 ## Acknowledgements
 
-This work benefits from guidance and reference materials shared by Dylan Tan during early exploration and prototyping.
+This work benefits from guidance and reference materials shared by Dylan Tan during early exploration, prototyping, and embedding.
+
 
 ---
 

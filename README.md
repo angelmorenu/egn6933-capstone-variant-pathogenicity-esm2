@@ -13,26 +13,29 @@
 
 ## Overview
 
-This capstone project develops a machine learning pipeline to classify missense variants as pathogenic versus benign using pretrained protein language model embeddings (ESM2). The working dataset is a post-quality-control, missense-only ClinVar-derived table (ClinVar 20240805) provided by Dr. Fan’s lab (Dylan Tan), plus aligned ESM2 embeddings.
+This capstone project develops a machine learning pipeline to classify missense variants as pathogenic versus benign using pretrained protein language model embeddings (ESM2). The working dataset is a curated, missense-only subset of ClinVar 20240805 (with strict pathogenic/benign labels), combined with precomputed ESM2 embeddings provided by Dr. Fan's lab (Dylan Tan).
+
+**Canonical Variant Identifier:** Each variant is uniquely identified by a composite key `chr_pos_ref_alt` (chromosome, genomic position, reference allele, alternate allele), which maps 1:1 to Dylan's precomputed ESM2 embedding vectors. This ensures full traceability and reproducibility across all modeling steps.
 
 ## Project Information
 
 **Objective:** Build a reproducible, prediction-focused ML pipeline for binary classification of missense variants using embedding-style features from protein language models.
 
 **Key Components:**
-- **Data:** ClinVar-derived missense-only dataset (post-QC) provided by Dr. Fan/Dylan; ClinVar downloads are used for reference/mapping
+- **Data:** ClinVar 20240805 missense-only curated dataset with strict pathogenic/benign labels (sourced directly from ClinVar). Variants are canonically identified via `chr_pos_ref_alt` keys. **All variants in the modeling dataset are mapped to and uniquely identified by Dylan's precomputed ESM2 embeddings** (provided by Dr. Fan's lab).
 - **Features:** Precomputed ESM2 protein language model embeddings (with optional feature generation if needed)
 - **Models:** Logistic Regression, Random Forest, and optional shallow MLP
-- **Evaluation:** AUROC/AUPRC with gene/protein-aware holdout splitting to prevent data leakage; the test split is treated as **generalization to unseen genes/proteins** (a biological extrapolation set rather than IID data)
+- **Evaluation:** Gene/protein-aware holdout splitting to prevent data leakage; the test split is treated as **generalization to unseen genes/proteins** (a biological extrapolation set rather than IID data). **Primary metric: AUROC (per Dr. Fan);** AUPRC is reported for completeness.
 - **Deployment:** Streamlit web application and command-line interface for variant scoring
 
 ## Features
 
 - ✅ **Transfer Learning:** Leverages pretrained protein language models (ESM2) for feature extraction
+   - All variants used in modeling are mapped to and uniquely identified by **Dylan's precomputed ESM2 embeddings**, ensuring full traceability and compliance with project requirements.
 - ✅ **Leakage-Aware Evaluation:** Gene/protein-aware train/test splits prevent inflated performance
 - ✅ **Rigorous Statistics:** Bootstrapped confidence intervals, DeLong tests, paired comparisons
 - ✅ **Production-Ready:** Reproducible pipeline with cached embeddings, versioned datasets, and deployment interfaces
-- ✅ **Class Imbalance Handling:** Class weighting, threshold tuning, AUPRC-focused evaluation
+- ✅ **Class Imbalance Handling:** Class weighting, threshold tuning, AUROC-first evaluation (AUPRC reported as secondary)
 - ✅ **Interpretability:** Feature importance, calibrated probabilities, attribution analysis
 
 ## Repository Structure
@@ -40,10 +43,18 @@ This capstone project develops a machine learning pipeline to classify missense 
 ```
 egn6933-capstone-variant-pathogenicity-esm2/
 ├── README.md                           # Project overview and documentation
+├── config/                             # Configuration files (hyperparameters, splits, decisions)
+├── data/                               # Data directory (excluded from git)
+├── docs/                               # Additional documentation
+├── environment.yml                     # Conda environment specification
+├── milestones/                         # Weekly tracker and project milestones
+├── notebooks/                          # Jupyter notebooks for EDA and prototyping
 ├── project-proposal/                   # Formal capstone proposal documents
 │   ├── Project_Proposal.md            # Full formal proposal (prose, inline citations)
 ├── research/                           # Literature review and references
-│   └── papers/                        # Research papers (excluded from git)
+│   └── Papers/                        # Research papers and citation notes
+├── requirements.txt                    # Pip requirements (alternative to conda env)
+├── results/                            # Evaluation outputs, plots, reports
 ├── scripts/                           # Data processing and utility scripts
 │   ├── inspect_esm2_primateai_pkl.py  # ESM2 dataset schema inspection
 │   ├── ingest_esm2_primateai.py       # ESM2 to Parquet ingestion with label policies
@@ -58,21 +69,10 @@ egn6933-capstone-variant-pathogenicity-esm2/
 ├── src/                               # Core project source code
 │   ├── variant_classifier/            # Main package
 │   └── variant_embeddings/            # Embedding utilities
-├── notebooks/                         # Jupyter notebooks for EDA and prototyping
-├── config/                            # Configuration files (hyperparameters, splits, decisions)
-├── tests/                            # Unit and integration tests
-├── data/                             # Data directory (excluded from git)
-│   ├── raw/                          # Original downloads (if applicable)
-│   ├── processed/                    # Cleaned, labeled datasets
-│   └── embeddings/                   # Cached embedding features
-├── models/                           # Trained model artifacts (excluded from git)
-├── results/                          # Evaluation outputs, plots, reports
-├── app/                              # Streamlit web application
-├── docs/                             # Additional documentation
+├── tests/                             # Unit and integration tests
 ├── .gitignore                        # Git exclusions (data, models, PDFs)
 ├── pyproject.toml                    # Python project configuration
-├── environment.yml                   # Conda environment specification
-└── LICENSE                           # MIT License
+└── .git/                              # Git metadata
 ```
 
 **Note:** Data files (e.g., Dylan’s large `.pkl`/`.txt`, `data/processed/*.npy`), trained models, and generated outputs (including `results/`) are excluded from version control per `.gitignore`.
@@ -107,9 +107,8 @@ egn6933-capstone-variant-pathogenicity-esm2/
    ```bash
    # Data is not included in the repository.
    # Required for Week 2 build (local files):
-   # - data/Dylan Tan/esm2_selected_features.pkl
-   # - data/Dylan Tan/clinvar_20240805.missense_strict_updated.txt (or ...missense_strict.txt)
-   # - data/clinvar/variant_summary.txt.gz
+   # - data/Dylan Tan/esm2_selected_features.pkl (Dylan's precomputed ESM2 embeddings from Dr. Fan's lab)
+   # - data/clinvar/variant_summary.txt.gz (ClinVar download for variant mapping)
    ```
 
 ### Usage
@@ -179,6 +178,49 @@ conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_datase
 conda run -n egn6933-variant-embeddings python scripts/week4_eda.py
 ```
 
+Week 6 robustness in practice (two split seeds + bootstrapped CIs):
+
+```bash
+# Seed 13 splits (gene-disjoint)
+conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
+   --seed 13 \
+   --out-prefix data/processed/week2_training_table_strict
+
+# Build curated dataset and archive to seed-specific filename
+conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_dataset.py
+cp -f data/processed/week4_curated_dataset.parquet data/processed/week4_curated_dataset_seed13.parquet
+cp -f data/processed/week4_curated_dataset_meta.json data/processed/week4_curated_dataset_seed13_meta.json
+
+# RF baseline + bootstrap CIs on test
+conda run -n egn6933-variant-embeddings python scripts/baseline_train_eval.py \
+   --model rf \
+   --rf-max-depth 4 \
+   --rf-n-estimators 200 \
+   --data data/processed/week4_curated_dataset_seed13.parquet \
+   --bootstrap-iters 1000 \
+   --out-json results/baseline_rf_seed13_bootstrap.json
+
+# Seed 37 (repeat)
+conda run -n egn6933-variant-embeddings python scripts/make_week3_splits.py \
+   --seed 37 \
+   --out-prefix data/processed/week2_training_table_strict
+
+conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_dataset.py
+cp -f data/processed/week4_curated_dataset.parquet data/processed/week4_curated_dataset_seed37.parquet
+cp -f data/processed/week4_curated_dataset_meta.json data/processed/week4_curated_dataset_seed37_meta.json
+
+conda run -n egn6933-variant-embeddings python scripts/baseline_train_eval.py \
+   --model rf \
+   --rf-max-depth 4 \
+   --rf-n-estimators 200 \
+   --data data/processed/week4_curated_dataset_seed37.parquet \
+   --bootstrap-iters 1000 \
+   --out-json results/baseline_rf_seed37_bootstrap.json
+
+# Summary note
+# - docs/week6_seed_sensitivity.md
+```
+
 ```bash
 # Week 4: build a single curated dataset Parquet (label + split + embedding vectors)
 conda run -n egn6933-variant-embeddings python scripts/make_week4_curated_dataset.py
@@ -214,7 +256,7 @@ python scripts/baseline_train_eval.py \
 python scripts/baseline_train_eval.py \
    --data data/processed/week4_curated_dataset.parquet \
    --c-grid 0.01,0.1,1,10,100 \
-   --select-metric auprc \
+   --select-metric auroc \
    --calibration platt \
    --bootstrap-iters 1000 \
    --plot-pr results/pr_curves_val_vs_test.png \
@@ -291,11 +333,12 @@ python scripts/baseline_train_eval.py \
 ## Technical Stack
 
 **Languages & Frameworks:**
-- Python 3.11.14 (core language)
+- Python 3.11+ (core language; tested locally with Python 3.12)
 - PyTorch or TensorFlow (optional, for MLP)
-- scikit-learn (baseline models, metrics)
+- scikit-learn 1.4.2 (baseline models, metrics)
+- scipy 1.13.1 (scientific computing)
 - pandas 2.3.3, NumPy 1.26.4 (data manipulation)
-- pyarrow 22.0.0 (Parquet I/O)
+- pyarrow 15.0.2 (Parquet I/O)
 
 **Bioinformatics Tools:**
 - ESM / ESM2 (protein language model embeddings)
@@ -316,8 +359,8 @@ python scripts/baseline_train_eval.py \
 ## Data Sources
 
 - **ESM / ESM2:** https://github.com/facebookresearch/esm
-- **ClinVar:** https://www.ncbi.nlm.nih.gov/clinvar/
-- **ClinVar-derived cleaned missense dataset (post-QC):** Provided by Dr. Fan’s lab (Dylan Tan), derived from ClinVar 20240805
+- **ClinVar:** https://www.ncbi.nlm.nih.gov/clinvar/ (primary source for missense variant labels and metadata)
+- **Precomputed ESM2 Embeddings:** Provided by Dr. Fan's lab (Dylan Tan)
 - **Ensembl VEP (optional):** https://www.ensembl.org/info/docs/tools/vep/
 
 ## References
@@ -352,5 +395,6 @@ Email: angel.morenu@ufl.edu
 ---
 
 **Repository:** https://github.com/angelmorenu/egn6933-capstone-variant-pathogenicity-esm2  
+
 **Course:** EGN 6933 – Project in Applied Data Science, Spring 2026  
 **University of Florida**
