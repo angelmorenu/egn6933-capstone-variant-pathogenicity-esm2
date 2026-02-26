@@ -130,18 +130,39 @@ python scripts/baseline_train_eval.py \
 
 (Goal: make baseline selection defensible and reproducible.)
 
+**Status:** In Progress
+
 - [ ] Logistic Regression hyperparameter sweep
-  - [ ] Sweep `C` using `--c-grid` and select by validation AUPRC (or another declared metric)
+  - [ ] Sweep `C` using `--c-grid` and select by validation AUROC (primary metric; per Dr. Fan)
   - [ ] Confirm scaling is applied (StandardScaler) in the pipeline
   - [ ] Save the selected `C` and selection metric in the JSON report
 
 - [ ] Random Forest hyperparameters (minimal, controlled)
-  - [ ] Confirm chosen `max_depth`, `n_estimators` reflect “shallow RF” intent
+  - [ ] Confirm chosen `max_depth`, `n_estimators` reflect "shallow RF" intent
   - [ ] Optionally test a small grid (keep it small; avoid turning Week 7 into full HPO)
 
 - [ ] Confirm class imbalance handling is explicit
   - [ ] Record whether class weights are enabled for each model
   - [ ] If you change weighting, rerun Week 6 seed tests (so comparisons stay apples-to-apples)
+
+**Recommended commands (Week 7):**
+```bash
+# LogReg C-sweep with AUROC selection on validation set
+python scripts/baseline_train_eval.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --c-grid 0.001,0.01,0.1,1,10,100 \
+  --select-metric auroc \
+  --out-json results/week7_logreg_c_sweep.json
+
+# Optional: RF grid search (keep it small to save time)
+python scripts/baseline_train_eval.py \
+  --model rf \
+  --rf-max-depth 3,4,5 \
+  --rf-n-estimators 100,200 \
+  --data data/processed/week4_curated_dataset.parquet \
+  --select-metric auroc \
+  --out-json results/week7_rf_grid_search.json
+```
 
 **Recommended commands (Week 7):**
 ```bash

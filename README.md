@@ -326,7 +326,9 @@ python scripts/baseline_train_eval.py \
 - [x] **Jan 26, 2026:** Implemented leakage-aware (gene-grouped) train/val/test splits and wrote split artifacts (Parquet + index files + meta)
 - [x] **Week 4:** Finalized curated dataset artifact + Week 4 EDA/go-no-go checks
 - [x] **Week 5:** Trained/evaluated baseline models (LogReg, shallow RF) + optional Platt calibration; saved reports/plots under `results/`
-- [ ] **Week 8:** Baseline models trained and evaluated
+- [x] **Week 6:** Seed robustness (seed 13 vs 37) + bootstrap confidence intervals on test set
+- [ ] **Week 7:** Hyperparameter selection (LogReg C-sweep, RF grid) + class imbalance handling review
+- [ ] **Week 8:** Threshold selection + statistical testing prep
 - [ ] **Week 12:** Final model selection and statistical validation
 - [ ] **Week 15:** Deployment and final presentation
 
