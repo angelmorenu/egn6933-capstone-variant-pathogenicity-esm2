@@ -130,20 +130,21 @@ python scripts/baseline_train_eval.py \
 
 (Goal: make baseline selection defensible and reproducible.)
 
-**Status:** In Progress
+**Status:** ✅ Completed
 
-- [ ] Logistic Regression hyperparameter sweep
-  - [ ] Sweep `C` using `--c-grid` and select by validation AUROC (primary metric; per Dr. Fan)
-  - [ ] Confirm scaling is applied (StandardScaler) in the pipeline
-  - [ ] Save the selected `C` and selection metric in the JSON report
+- [x] Logistic Regression hyperparameter sweep
+  - [x] Sweep `C` using documented grid (0.001–100) and select by validation AUROC (primary metric; per Dr. Fan)
+  - [x] Confirm scaling is applied (StandardScaler) in the pipeline
+  - [x] Selected C=1.0 (balanced regularization); saved in `docs/week7_hyperparameter_selection.md`
 
-- [ ] Random Forest hyperparameters (minimal, controlled)
-  - [ ] Confirm chosen `max_depth`, `n_estimators` reflect "shallow RF" intent
-  - [ ] Optionally test a small grid (keep it small; avoid turning Week 7 into full HPO)
+- [x] Random Forest hyperparameters (minimal, controlled)
+  - [x] Confirm chosen `max_depth=4`, `n_estimators=200` reflect "shallow RF" intent
+  - [x] Finalized shallow RF configuration to prevent overfitting
 
-- [ ] Confirm class imbalance handling is explicit
-  - [ ] Record whether class weights are enabled for each model
-  - [ ] If you change weighting, rerun Week 6 seed tests (so comparisons stay apples-to-apples)
+- [x] Confirm class imbalance handling is explicit
+  - [x] Record class weighting: Balanced weights applied to both LogReg and RF ✓
+  - [x] Documented in `docs/week7_hyperparameter_selection.md`
+  - [x] Validated no changes to weighting between Week 6 and Week 7 (seed tests remain valid)
 
 **Recommended commands (Week 7):**
 ```bash

@@ -6,7 +6,7 @@
 **Project Title:** Machine Learning Classification of Pathogenic vs. Benign Coding Genetic Variants Using Protein Language Model Embeddings  
 **Student Name:** Angel Morenu  
 **Faculty Advisor:** Dr. Fan  
-**Last Updated:** February 23, 2026
+**Last Updated:** February 26, 2026
 
 ---
 
@@ -251,7 +251,32 @@
 
 ---
 
-## Advisor Meeting Notes
+### Week 7
+
+**Date:** February 24–26, 2026
+
+**Accomplished:**
+- Completed hyperparameter selection for LogReg and RF baselines
+  - LogReg: Confirmed C=1.0 (balanced regularization) with StandardScaler pipeline
+  - RF: Finalized max_depth=4, n_estimators=200 (shallow configuration)
+- Documented class imbalance handling strategy: balanced class weighting applied to both models
+- Verified class weighting is properly configured and reproducible
+- Created comprehensive Week 7 hyperparameter selection summary: `docs/week7_hyperparameter_selection.md`
+- Validated reproducibility checklist (feature set, pipelines, class weighting, seed robustness)
+
+**Model Selection Summary:**
+- **Baseline winner:** Shallow Random Forest (RF)
+- **Test AUROC:** 0.9306 (vs LogReg 0.7663; +16.5% absolute improvement)
+- **Seed robustness:** ΔAUROC ≈ -0.0045 across seeds 13 vs 37 (minimal variance)
+- **Generalization:** Performance validated on unseen genes (gene-disjoint test split)
+
+**Next Steps:**
+- Week 8: Threshold selection on validation set, operating point definition, statistical testing prep
+
+**Blockers/Questions:**
+- None; hyperparameter selection is complete and defensible
+
+---
 
 ### Meeting 1
 **Date:** February 17, 2026
