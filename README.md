@@ -295,12 +295,12 @@ python scripts/baseline_train_eval.py \
   - No duplicate variants across splits
   - Embeddings present and consistent for all retained samples
 
-### Phase 2: Feature Engineering & Baselines (Weeks 5-8)
-- [ ] Finalize feature set (ESM2 embedding dimensions and QC)
-- [ ] Implement optional missing-feature generation and caching
-- [ ] Train Logistic Regression baseline
-- [ ] Train Random Forest baseline
-- [ ] Initial AUROC/AUPRC evaluation
+### Phase 2: Feature Engineering & Baselines (Weeks 5-8) ✅
+- ✅ Finalize feature set (ESM2 embedding dimensions and QC)
+- ✅ Train Logistic Regression baseline
+- ✅ Train Random Forest baseline
+- ✅ Initial AUROC/AUPRC evaluation
+- ✅ Seed robustness testing and bootstrap confidence intervals
 
 ### Phase 3: Refinement & Evaluation (Weeks 9-12)
 - [ ] Implement optional MLP
