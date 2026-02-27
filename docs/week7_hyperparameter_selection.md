@@ -7,7 +7,7 @@
 
 ## Summary
 
-Week 7 focused on hyperparameter selection for both Logistic Regression and Random Forest baselines, with documentation of class imbalance handling strategies. Based on the existing Week 5-6 evaluation results, we formalized hyperparameter choices and documented the rationale for each model's configuration.
+Week 7 focused on hyperparameter selection for both Logistic Regression and Random Forest baselines, with documentation of class imbalance handling strategies. Based on the existing Week 5-6 evaluation results, I formalized hyperparameter choices and documented the rationale for each model's configuration.
 
 ---
 
