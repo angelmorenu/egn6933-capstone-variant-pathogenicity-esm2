@@ -155,18 +155,26 @@ def _plot_pr_curves_with_calibration(
     auprc_t_u = average_precision_score(y_test, s_test_uncal)
     auprc_t_c = average_precision_score(y_test, s_test_cal)
 
-    plt.figure(figsize=(8, 6))
-    plt.plot(rv_u, pv_u, label=f"RF val (uncalibrated): AUPRC={auprc_v_u:.4f}", linewidth=2)
-    plt.plot(rv_c, pv_c, label=f"RF val (Platt calibrated): AUPRC={auprc_v_c:.4f}", linewidth=2)
-    plt.plot(rt_u, pt_u, label=f"RF test (uncalibrated): AUPRC={auprc_t_u:.4f}", linewidth=2, linestyle='--')
-    plt.plot(rt_c, pt_c, label=f"RF test (Platt calibrated): AUPRC={auprc_t_c:.4f}", linewidth=2, linestyle='--')
-    plt.xlabel("Recall", fontsize=11)
-    plt.ylabel("Precision", fontsize=11)
-    plt.title("Precision-Recall Curves: Random Forest (Calibrated vs Uncalibrated)", fontsize=12, fontweight='bold')
-    plt.legend(loc="best", fontsize=9)
+    plt.figure(figsize=(9, 6))
+    # Plot uncalibrated first with distinct colors and styles
+    plt.plot(rv_u, pv_u, label=f"RF val (uncalibrated): AUPRC={auprc_v_u:.4f}", 
+             linewidth=2.5, color='#1f77b4', linestyle='-', alpha=0.8)
+    plt.plot(rt_u, pt_u, label=f"RF test (uncalibrated): AUPRC={auprc_t_u:.4f}", 
+             linewidth=2.5, color='#2ca02c', linestyle='--', alpha=0.9)
+    # Plot calibrated with contrasting colors
+    plt.plot(rv_c, pv_c, label=f"RF val (Platt calibrated): AUPRC={auprc_v_c:.4f}", 
+             linewidth=2, color='#ff7f0e', linestyle=':', alpha=0.8)
+    plt.plot(rt_c, pt_c, label=f"RF test (Platt calibrated): AUPRC={auprc_t_c:.4f}", 
+             linewidth=2, color='#d62728', linestyle='-.', alpha=0.8)
+    plt.xlabel("Recall", fontsize=12, fontweight='bold')
+    plt.ylabel("Precision", fontsize=12, fontweight='bold')
+    plt.title("Precision-Recall Curves: Random Forest (Calibrated vs Uncalibrated)", fontsize=13, fontweight='bold')
+    plt.legend(loc="best", fontsize=10, framealpha=0.95)
     plt.grid(True, alpha=0.3)
+    plt.xlim([-0.01, 1.01])
+    plt.ylim([-0.01, 1.05])
     plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
+    plt.savefig(out_path, dpi=200)
     plt.close()
 
 
