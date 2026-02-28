@@ -157,36 +157,35 @@ def _plot_pr_curves_with_calibration(
 
     fig, ax = plt.subplots(figsize=(10, 7))
     
-    # Plot with very distinct visual styles to ensure all curves are visible
-    # Validation curves (lower performance)
+    # Plot UNCALIBRATED curves with thick, prominent lines
     ax.plot(rv_u, pv_u, label=f"RF val (uncalibrated): AUPRC={auprc_v_u:.4f}", 
-            linewidth=3, color='#1f77b4', linestyle='-', alpha=0.9, zorder=3)
-    ax.plot(rv_c, pv_c, label=f"RF val (Platt calibrated): AUPRC={auprc_v_c:.4f}", 
-            linewidth=2, color='#ff7f0e', linestyle=(0, (5, 2)), alpha=0.7, zorder=2)
-    
-    # Test curves (higher performance, nearly overlapping)
+            linewidth=3.5, color='#1f77b4', linestyle='-', alpha=0.9, zorder=3)
     ax.plot(rt_u, pt_u, label=f"RF test (uncalibrated): AUPRC={auprc_t_u:.4f}", 
-            linewidth=3.5, color='#2ca02c', linestyle='-', alpha=0.85, zorder=5)
-    ax.plot(rt_c, pt_c, label=f"RF test (Platt calibrated): AUPRC={auprc_t_c:.4f}", 
-            linewidth=2.5, color='#d62728', linestyle=(0, (3, 1, 1, 1)), alpha=0.75, zorder=4)
+            linewidth=3.5, color='#2ca02c', linestyle=(0, (5, 2)), alpha=0.85, zorder=4)
     
-    # Add annotation explaining curve overlap
-    ax.text(0.5, 0.85, 'Note: Test curves overlap\n(calibration preserves ranking)', 
-            transform=ax.transAxes, fontsize=9, style='italic',
-            bbox=dict(boxstyle='round,pad=0.5', facecolor='wheat', alpha=0.3))
+    # Plot CALIBRATED curves with thinner, distinct styles  
+    ax.plot(rv_c, pv_c, label=f"RF val (Platt calibrated): AUPRC={auprc_v_c:.4f}", 
+            linewidth=2, color='#ff7f0e', linestyle=(0, (1, 1)), alpha=0.7, zorder=1)
+    ax.plot(rt_c, pt_c, label=f"RF test (Platt calibrated): AUPRC={auprc_t_c:.4f}", 
+            linewidth=2.5, color='#d62728', linestyle=(0, (3, 1, 1, 1)), alpha=0.75, zorder=2)
     
     ax.set_xlabel("Recall", fontsize=13, fontweight='bold')
     ax.set_ylabel("Precision", fontsize=13, fontweight='bold')
-    ax.set_title("Precision-Recall Curves: Random Forest\n(Calibrated vs Uncalibrated)", 
-                 fontsize=14, fontweight='bold', pad=15)
-    ax.legend(loc="lower left", fontsize=10, framealpha=0.95, edgecolor='black')
-    ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
-    ax.set_xlim([-0.01, 1.01])
-    ax.set_ylim([-0.01, 1.05])
+    ax.set_title("Precision-Recall Curves: Random Forest (Calibrated vs Uncalibrated)", 
+            fontsize=14, fontweight='bold', pad=15)
+    ax.legend(loc="lower left", fontsize=11, framealpha=0.97, edgecolor='gray')
+    ax.grid(True, alpha=0.35, linestyle='--', linewidth=0.5)
+    ax.set_xlim(-0.01, 1.01)
+    ax.set_ylim(-0.01, 1.05)
     
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=300, bbox_inches='tight')
-    plt.close(fig)
+    # Add annotation explaining test curve overlap
+    ax.text(0.98, 0.95, 'Note: Test curves overlap\n(calibration preserves ranking)', 
+            transform=ax.transAxes, fontsize=10, verticalalignment='top', 
+            horizontalalignment='right', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.close()
 
 
 def _plot_reliability_diagram(
