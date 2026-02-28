@@ -25,9 +25,9 @@ df = pd.read_parquet(data_path)
 print(f"Loaded data with shape {df.shape}")
 
 # Extract features, labels, and splits
-embeddings = np.array(df['embedding'].tolist())
-labels = df['label'].values
-splits = df['split'].values
+embeddings = np.array(df['embedding'].tolist(), dtype=np.float32)
+labels = df['label'].to_numpy(dtype=np.int64)
+splits = df['split'].to_numpy(dtype=str)
 
 # Create split indices
 idx_train = np.where(splits == 'train')[0]
@@ -78,13 +78,13 @@ ax.set_ylabel("True Positive Rate", fontsize=12, fontweight='bold')
 ax.set_title("ROC Curves: Baseline Model Comparison (Test Set)", fontsize=13, fontweight='bold')
 ax.legend(loc="lower right", fontsize=11, framealpha=0.95)
 ax.grid(True, alpha=0.3)
-ax.set_xlim([-0.01, 1.01])
-ax.set_ylim([-0.01, 1.01])
+ax.set_xlim((-0.01, 1.01))
+ax.set_ylim((-0.01, 1.01))
 
 plt.tight_layout()
 
 # Save figure
-output_path = _REPO_ROOT / "results/presentation_roc_baselines.png"
+output_path = _REPO_ROOT / "results/roc_baselines.png"
 output_path.parent.mkdir(parents=True, exist_ok=True)
 plt.savefig(str(output_path), dpi=300, bbox_inches='tight')
 print(f"Saved ROC curve to {output_path}")
