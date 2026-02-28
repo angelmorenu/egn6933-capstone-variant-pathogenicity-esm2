@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import average_precision_score, brier_score_loss, log_loss, roc_auc_score
-from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_recall_curve, roc_curve
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
@@ -199,6 +199,43 @@ def _plot_reliability_diagram(
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
 
+
+def _plot_roc_curves_with_calibration(
+    y_val: np.ndarray,
+    s_val_uncal: np.ndarray,
+    s_val_cal: np.ndarray,
+    y_test: np.ndarray,
+    s_test_uncal: np.ndarray,
+    s_test_cal: np.ndarray,
+    out_path: str,
+) -> None:
+    """Plot ROC curves for uncalibrated and calibrated predictions on validation and test sets."""
+    fpr_v_u, tpr_v_u, _ = roc_curve(y_val, s_val_uncal)
+    fpr_v_c, tpr_v_c, _ = roc_curve(y_val, s_val_cal)
+    fpr_t_u, tpr_t_u, _ = roc_curve(y_test, s_test_uncal)
+    fpr_t_c, tpr_t_c, _ = roc_curve(y_test, s_test_cal)
+
+    auc_v_u = roc_auc_score(y_val, s_val_uncal)
+    auc_v_c = roc_auc_score(y_val, s_val_cal)
+    auc_t_u = roc_auc_score(y_test, s_test_uncal)
+    auc_t_c = roc_auc_score(y_test, s_test_cal)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr_v_u, tpr_v_u, label=f"val (uncal): AUC={auc_v_u:.4f}")
+    plt.plot(fpr_v_c, tpr_v_c, label=f"val (cal): AUC={auc_v_c:.4f}")
+    plt.plot(fpr_t_u, tpr_t_u, label=f"test (uncal): AUC={auc_t_u:.4f}", linestyle="--")
+    plt.plot(fpr_t_c, tpr_t_c, label=f"test (cal): AUC={auc_t_c:.4f}", linestyle="--")
+    plt.plot([0, 1], [0, 1], "k--", linewidth=1, alpha=0.5, label="random")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curves (Calibrated vs Uncalibrated)")
+    plt.legend(loc="lower right", fontsize=9)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=150)
+    plt.close()
+
+
 # Plot score distributions for positives vs negatives
 def _plot_score_distributions(
     y: np.ndarray,
@@ -288,6 +325,11 @@ def main() -> int:
         "--plot-pr",
         default=None,
         help="Optional path to save PR curves (val vs test).",
+    )
+    parser.add_argument(
+        "--plot-roc",
+        default=None,
+        help="Optional path to save ROC curves (calibrated vs uncalibrated, val vs test).",
     )
     parser.add_argument(
         "--plot-scores-test",
@@ -598,6 +640,24 @@ def main() -> int:
         else:
             _plot_pr_curves(y[idx_val], val_uncal, y[idx_test], test_uncal, str(plot_pr_path))
         plots["pr_curves"] = str(plot_pr_path)
+
+    if args.plot_roc:
+        plot_roc_path = _resolve_path(args.plot_roc)
+        assert plot_roc_path is not None
+        _ensure_parent(str(plot_roc_path))
+        val_uncal = model.predict_proba(x[idx_val])[:, 1]
+        test_uncal = model.predict_proba(x[idx_test])[:, 1]
+        if calibrated_scores_val is not None and calibrated_scores_test is not None:
+            _plot_roc_curves_with_calibration(
+                y[idx_val],
+                val_uncal,
+                calibrated_scores_val,
+                y[idx_test],
+                test_uncal,
+                calibrated_scores_test,
+                str(plot_roc_path),
+            )
+        plots["roc_curves"] = str(plot_roc_path)
 
     if args.plot_scores_test:
         plot_scores_path = _resolve_path(args.plot_scores_test)
