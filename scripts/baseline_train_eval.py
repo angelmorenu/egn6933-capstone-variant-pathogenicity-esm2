@@ -149,42 +149,103 @@ def _plot_pr_curves_with_calibration(
     pt_u, rt_u, _ = precision_recall_curve(y_test, s_test_uncal)
     pt_c, rt_c, _ = precision_recall_curve(y_test, s_test_cal)
 
+    def _median_abs_overlap(
+        recall_ref: np.ndarray,
+        precision_ref: np.ndarray,
+        recall_other: np.ndarray,
+        precision_other: np.ndarray,
+    ) -> float:
+        order_ref = np.argsort(recall_ref)
+        order_other = np.argsort(recall_other)
+        r_ref = recall_ref[order_ref]
+        p_ref = precision_ref[order_ref]
+        r_other = recall_other[order_other]
+        p_other = precision_other[order_other]
+        p_other_interp = np.interp(r_ref, r_other, p_other)
+        return float(np.median(np.abs(p_ref - p_other_interp)))
+
+    # Overlap is expected when calibration is (approximately) monotonic, since PR curves depend
+    # on ranking rather than probability calibration. If overlap is strong, we emphasize the
+    # calibrated curve with markers + annotation (no data offsets).
+    val_overlap = _median_abs_overlap(rv_u, pv_u, rv_c, pv_c) < 1e-2
+    test_overlap = _median_abs_overlap(rt_u, pt_u, rt_c, pt_c) < 1e-2
+
     # Compute AUPRC for legend
     auprc_v_u = average_precision_score(y_val, s_val_uncal)
     auprc_v_c = average_precision_score(y_val, s_val_cal)
     auprc_t_u = average_precision_score(y_test, s_test_uncal)
     auprc_t_c = average_precision_score(y_test, s_test_cal)
 
-    fig, ax = plt.subplots(figsize=(10, 7))
-    
-    # Plot UNCALIBRATED curves with thick, prominent lines
-    ax.plot(rv_u, pv_u, label=f"RF val (uncalibrated): AUPRC={auprc_v_u:.4f}", 
-            linewidth=3.5, color='#1f77b4', linestyle='-', alpha=0.9, zorder=3)
-    ax.plot(rt_u, pt_u, label=f"RF test (uncalibrated): AUPRC={auprc_t_u:.4f}", 
-            linewidth=3.5, color='#2ca02c', linestyle=(0, (5, 2)), alpha=0.85, zorder=4)
-    
-    # Plot CALIBRATED curves with thinner, distinct styles  
-    ax.plot(rv_c, pv_c, label=f"RF val (Platt calibrated): AUPRC={auprc_v_c:.4f}", 
-            linewidth=2, color='#ff7f0e', linestyle=(0, (1, 1)), alpha=0.7, zorder=1)
-    ax.plot(rt_c, pt_c, label=f"RF test (Platt calibrated): AUPRC={auprc_t_c:.4f}", 
-            linewidth=2.5, color='#d62728', linestyle=(0, (3, 1, 1, 1)), alpha=0.75, zorder=2)
-    
-    ax.set_xlabel("Recall", fontsize=13, fontweight='bold')
-    ax.set_ylabel("Precision", fontsize=13, fontweight='bold')
-    ax.set_title("Precision-Recall Curves: Random Forest (Calibrated vs Uncalibrated)", 
-            fontsize=14, fontweight='bold', pad=15)
-    ax.legend(loc="lower left", fontsize=11, framealpha=0.97, edgecolor='gray')
-    ax.grid(True, alpha=0.35, linestyle='--', linewidth=0.5)
-    ax.set_xlim(-0.01, 1.01)
-    ax.set_ylim(-0.01, 1.05)
-    
-    # Add annotation explaining test curve overlap
-    ax.text(0.98, 0.95, 'Note: Test curves overlap\n(calibration preserves ranking)', 
-            transform=ax.transAxes, fontsize=10, verticalalignment='top', 
-            horizontalalignment='right', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-    
+    plt.figure(figsize=(10, 7))
+    plt.plot(
+        rv_u,
+        pv_u,
+        label=f"RF val (uncalibrated): AUPRC={auprc_v_u:.4f}",
+        linewidth=3.2,
+        color="#1f77b4",
+        linestyle="-",
+        alpha=0.95,
+        zorder=4,
+    )
+    plt.plot(
+        rt_u,
+        pt_u,
+        label=f"RF test (uncalibrated): AUPRC={auprc_t_u:.4f}",
+        linewidth=3.2,
+        color="#2ca02c",
+        linestyle=(0, (6, 3)),
+        alpha=0.95,
+        zorder=4,
+    )
+    plt.plot(
+        rv_c,
+        pv_c,
+        label=f"RF val (Platt calibrated){' (overlaps)' if val_overlap else ''}: AUPRC={auprc_v_c:.4f}",
+        linewidth=2.4,
+        color="#ff7f0e",
+        linestyle=(0, (1, 2)),
+        alpha=0.9,
+        marker="o" if val_overlap else None,
+        markevery=45 if val_overlap else None,
+        markersize=3.5 if val_overlap else None,
+        markerfacecolor="white" if val_overlap else None,
+        markeredgewidth=1.0 if val_overlap else None,
+        zorder=5,
+    )
+    plt.plot(
+        rt_c,
+        pt_c,
+        label=f"RF test (Platt calibrated){' (overlaps)' if test_overlap else ''}: AUPRC={auprc_t_c:.4f}",
+        linewidth=2.4,
+        color="#d62728",
+        linestyle=(0, (5, 2, 1, 2)),
+        alpha=0.9,
+        marker="s" if test_overlap else None,
+        markevery=45 if test_overlap else None,
+        markersize=3.5 if test_overlap else None,
+        markerfacecolor="white" if test_overlap else None,
+        markeredgewidth=1.0 if test_overlap else None,
+        zorder=5,
+    )
+    plt.xlabel("Recall", fontsize=12, fontweight='bold')
+    plt.ylabel("Precision", fontsize=12, fontweight='bold')
+    plt.title("Precision-Recall Curves: Random Forest (Calibrated vs Uncalibrated)", fontsize=13, fontweight='bold')
+    if val_overlap or test_overlap:
+        plt.annotate(
+            "Note: calibrated vs uncalibrated PR curves can overlap because calibration is monotonic\n"
+            "(ranking unchanged). Calibration is better assessed via reliability/Brier/log-loss.",
+            xy=(0.02, 0.03),
+            xycoords="axes fraction",
+            fontsize=9,
+            color="#333333",
+            bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": "#bbbbbb", "alpha": 0.92},
+        )
+    plt.legend(loc="lower left", fontsize=10, framealpha=0.95)
+    plt.grid(True, alpha=0.3)
+    plt.xlim([-0.01, 1.01])
+    plt.ylim([-0.01, 1.05])
     plt.tight_layout()
-    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.savefig(out_path, dpi=300)
     plt.close()
 
 

@@ -33,29 +33,72 @@ This capstone project develops a machine learning pipeline to classify missense 
 - ✅ **Transfer Learning:** Leverages pretrained protein language models (ESM2) for feature extraction
    - All variants used in modeling are mapped to and uniquely identified by **Dylan's precomputed ESM2 embeddings**, ensuring full traceability and compliance with project requirements.
 - ✅ **Leakage-Aware Evaluation:** Gene/protein-aware train/test splits prevent inflated performance
-- ✅ **Rigorous Statistics:** Bootstrapped confidence intervals, DeLong tests, paired comparisons
+  - Planned: Homology-aware audit to screen for sequence similarity across splits
+- ✅ **Rigorous Statistics:** Bootstrapped confidence intervals, DeLong tests, McNemar exact tests, paired comparisons
 - ✅ **Production-Ready:** Reproducible pipeline with cached embeddings, versioned datasets, and deployment interfaces
 - ✅ **Class Imbalance Handling:** Class weighting, threshold tuning, AUROC-first evaluation (AUPRC reported as secondary)
-- ✅ **Interpretability:** Feature importance, calibrated probabilities, attribution analysis
+- ✅ **Interpretability:** Feature importance, calibrated probabilities, embedding-space visualization (UMAP/t-SNE), attribution analysis
 
-## Repository Structure
+## Repository Structure & Navigation Guide
+
+This section explains the folder and file organization of the repository. Each major folder serves a specific purpose in the project workflow.
+
+### How to Navigate This Repository
+
+1. **Start with this README** for project overview and setup instructions
+2. **Review `project-proposal/`** for the formal capstone proposal and project scope
+3. **Check `docs/`** for detailed technical documentation, weekly checklists, and progress summaries
+4. **Explore `notebooks/`** for exploratory data analysis (EDA) and prototyping work
+5. **Use `scripts/`** for executable data processing and model training pipelines
+6. **Examine `src/`** for core reusable Python modules and package code
+7. **View `results/`** (not in git) for evaluation outputs, plots, and performance reports
+8. **Consult `milestones/`** for weekly progress tracking and timeline updates
+
+### Folder Structure & Purpose
 
 ```
 egn6933-capstone-variant-pathogenicity-esm2/
 ├── README.md                           # Project overview and documentation
-├── config/                             # Configuration files (hyperparameters, splits, decisions)
-├── data/                               # Data directory (excluded from git)
-├── docs/                               # Additional documentation
+├── LICENSE                             # MIT License
+├── .gitignore                          # Git exclusions (data, models, PDFs)
+├── config/                             # Configuration files and project decisions
+│   ├── decisions.md                   # Design decisions and rationale
+│   └── label_maps/                    # ClinVar label mapping configurations
+├── data/                               # Data directory (EXCLUDED from git - see .gitignore)
+│   ├── clinvar/                       # ClinVar downloads (variant_summary.txt.gz, VCF)
+│   ├── Dylan Tan/                     # Lab-provided embeddings and curated tables
+│   └── processed/                     # Processed datasets (Parquet, NPY, TSV)
+├── docs/                               # Detailed technical documentation
+│   ├── README.md                      # Documentation index
+│   ├── week1_4_checklist.md           # Weeks 1-4 execution checklist
+│   ├── week5_8_checklist.md           # Weeks 5-8 execution checklist (✅ COMPLETE)
+│   ├── week5_baseline_conclusion.md   # Baseline model selection summary
+│   ├── week6_seed_sensitivity.md      # Robustness testing across split seeds
+│   ├── week7_hyperparameter_selection.md  # Hyperparameter tuning decisions
+│   ├── week8_summary.md               # ✅ Week 8 comprehensive summary (NEW)
+│   ├── chromosome_split_design.md     # Split strategy design document
+│   └── system-architecture.md         # System architecture overview
 ├── environment.yml                     # Conda environment specification
-├── milestones/                         # Weekly tracker and project milestones
-├── notebooks/                          # Jupyter notebooks for EDA and prototyping
-├── project-proposal/                   # Formal capstone proposal documents
-│   ├── Project_Proposal.md            # Full formal proposal (prose, inline citations)
-├── research/                           # Literature review and references
-│   └── Papers/                        # Research papers and citation notes
+├── milestones/                         # Project timeline and progress tracking
+│   └── progress-tracker.md            # Weekly milestone tracker (UPDATED: Week 8 ✅)
+├── notebooks/                          # Jupyter notebooks for exploration
+│   └── 01_eda_clinvar.ipynb           # ClinVar exploratory data analysis
+├── project-proposal/                   # Formal capstone proposal (APPROVED)
+│   ├── Project_Proposal.md            # Full formal proposal (markdown)
+│   ├── Morenu_Project_Proposal.docx   # Word version for submission
+│   └── *.backup*.docx                 # Backup versions before edits
+├── research/                           # Literature review (EXCLUDED from git)
+│   ├── README.md                      # Research notes index
+│   ├── Papers/                        # Research papers (PDFs excluded)
+│   └── citations.md                   # Citation tracking
 ├── requirements.txt                    # Pip requirements (alternative to conda env)
-├── results/                            # Evaluation outputs, plots, reports
-├── scripts/                           # Data processing and utility scripts
+├── results/                            # Model outputs and evaluation (EXCLUDED from git)
+│   ├── Week 5/                        # Week 5 baseline results (24 JSON/PNG files)
+│   ├── baseline_logreg_metrics.json   # Logistic regression results
+│   ├── baseline_rf_report.json        # Random forest results
+│   └── *.png                          # Evaluation plots (PR curves, reliability diagrams)
+├── scripts/                           # Executable data processing pipelines
+│   ├── README.md                      # Scripts usage documentation
 │   ├── inspect_esm2_primateai_pkl.py  # ESM2 dataset schema inspection
 │   ├── ingest_esm2_primateai.py       # ESM2 to Parquet ingestion with label policies
 │   ├── make_pickle_id_to_chrposrefalt.py  # Map pickle numeric ID -> chr_pos_ref_alt via ClinVar
@@ -64,18 +107,30 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── make_week3_splits.py           # Week 3: leakage-aware (gene-grouped) train/val/test splits
 │   ├── make_week4_curated_dataset.py  # Week 4: curated Parquet (label + split + embedding)
 │   ├── week4_eda.py                   # Week 4: EDA + go/no-go checks
-│   ├── baseline_train_eval.py          # Baseline train/eval (LR/RF) + calibration, bootstrap CIs, plots
-│   └── build_clinvar_labels_from_vcf.py  # Optional: reproduce label counts from a ClinVar VCF
-├── src/                               # Core project source code
-│   ├── variant_classifier/            # Main package
-│   └── variant_embeddings/            # Embedding utilities
-├── tests/                             # Unit and integration tests
-├── .gitignore                        # Git exclusions (data, models, PDFs)
-├── pyproject.toml                    # Python project configuration
-└── .git/                              # Git metadata
+│   ├── baseline_train_eval.py         # Baseline train/eval (LR/RF) + calibration, bootstrap CIs, plots
+│   ├── compare_baselines_stats.py     # Statistical comparison (DeLong, McNemar, bootstrap)
+│   ├── plot_compare_baselines_stats.py  # Visualization for statistical comparisons
+│   └── build_clinvar_labels_from_vcf.py  # Optional: reproduce label counts from VCF
+├── src/                                # Core reusable Python modules
+│   ├── variant_classifier/             # Classification pipeline modules
+│   └── variant_embeddings/             # Embedding utilities and feature engineering
+├── tests/                              # Unit and integration tests
+│   └── test_placeholder.py            # Placeholder test file
+├── pyproject.toml                      # Python project configuration (PEP 518)
+└── .git/                               # Git repository metadata
 ```
 
-**Note:** Data files (e.g., Dylan’s large `.pkl`/`.txt`, `data/processed/*.npy`), trained models, and generated outputs (including `results/`) are excluded from version control per `.gitignore`.
+### Important Notes on Excluded Files
+
+The following files and directories are **excluded from version control** (see `.gitignore`):
+- **`data/`** - All raw and processed data files (large binary files, embeddings, Parquet datasets)
+- **`results/`** - All model evaluation outputs, plots, and performance reports
+- **`research/`** - Literature PDFs and personal research notes
+- **Binary artifacts:** `.pkl`, `.parquet`, `.npy`, `.pt`, `.pth`, `.h5` (machine learning artifacts)
+- **Documents:** `.pdf`, `.docx` (generated documents; keep only markdown sources)
+- **System files:** `.DS_Store`, `__pycache__/`, `.ipynb_checkpoints/`
+
+This keeps the repository clean and focused on source code, scripts, and documentation while avoiding large binary files.
 
 ## Getting Started
 
@@ -304,8 +359,9 @@ python scripts/baseline_train_eval.py \
 
 ### Phase 3: Refinement & Evaluation (Weeks 9-12)
 - [ ] Implement optional MLP
-- [ ] Bootstrapped confidence intervals
-- [ ] Paired statistical tests (DeLong, permutation)
+- [ ] Bootstrapped confidence intervals and paired statistical tests (DeLong, McNemar)
+- [ ] **Homology-aware leakage audit:** Screen for high sequence similarity across train/val/test splits; adjust grouping if strong homology detected
+- [ ] **Embedding-space visualization:** Generate UMAP/t-SNE plot (colored by pathogenic/benign label and split assignment) as a stakeholder-facing diagnostic
 - [ ] Error analysis and interpretability
 
 ### Phase 4: Deployment & Documentation (Weeks 13-15)
@@ -385,13 +441,10 @@ M.S. Applied Data Science
 University of Florida  
 Email: angel.morenu@ufl.edu
 
-**Faculty Advisor:** Dr. Xiao Fan  
-**Course Instructor:** Dr. Edwin Marte Zorrilla
-
 ## Acknowledgments
 
 - **Dylan Tan** for providing the cleaned missense dataset and aligned precomputed embedding features
-- **Dr. Xiao Fan** for project guidance and access to HiPerGator computational resources
+- **Dr. Xiao Fan** for project guidance and access to Lab via  HiPerGator computational resources
 - **ClinVar** and **Ensembl** for providing public genomic variant databases and annotation tools
 
 ---

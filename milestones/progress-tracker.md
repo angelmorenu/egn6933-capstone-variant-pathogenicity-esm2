@@ -278,6 +278,35 @@
 
 ---
 
+### Week 8
+
+**Date:** March 3–7, 2026
+
+**Accomplished:**
+- [x] Finalized threshold selection on validation set using MCC-maximization criterion
+  - LogReg threshold: 0.9934 (conservative; high precision)
+  - RF threshold: 0.7328 (balanced precision-recall)
+  - Both applied to test set with no test peeking
+- [x] Confirmed Platt sigmoid calibration protocol: fit on val, evaluated on test
+  - Val probability quality improved (Brier: 0.2036 → 0.1271, −37.6%)
+  - Test degradation observed (Brier: 0.1363 → 0.2615, +91.8%), attributed to distribution shift (val 17.8% → test 58.8% positive rate)
+- [x] Generated Week 8 comprehensive summary artifact: `docs/week8_summary.md`
+  - Metrics table (AUROC/AUPRC/MCC comparison for LogReg vs RF)
+  - Paired bootstrap + DeLong comparison (ΔAUROC = 0.1076, p = 5.87e-10)
+  - Existing plots verified: PR curves, reliability diagram, score distributions, effect-size summary
+  - 8-sentence findings summary with 5 detailed limitations
+  - Reproducibility pointers to all artifacts
+
+**Advisor Feedback (Incorporated):**
+- **Recommendation 1:** Implement homology-aware leakage audit in Weeks 9–12 to screen for highly similar proteins across splits
+- **Recommendation 2:** Generate UMAP/t-SNE embedding-space visualization (colored by label and split) for stakeholder communication
+
+**Next Steps:**
+- Proceed to Week 9–12: error analysis, MLP implementation, homology audit, embedding visualization
+- Maintain RF as the reference baseline for all future model comparisons
+
+---
+
 ### Meeting 1
 **Date:** February 17, 2026
 
