@@ -372,19 +372,21 @@ python scripts/baseline_train_eval.py \
 
 ## Key Milestones
 
-- [x] **Jan 14, 2026:** ESM2 ingestion pipeline implemented with label policies
-- [x] **Jan 15, 2026:** Proposal updated to coding-variant scope
-- [x] **Jan 15, 2026:** GitHub repository initialized and pushed
-- [x] **Jan 16, 2026:** Confirmed pickle numeric ID matches ClinVar VariationID; generated chr_pos_ref_alt mapping
-- [x] **Jan 20, 2026:** Proposal updated to missense-only scope and ClinVar-primary framing
-- [x] **Jan 20, 2026:** Week 2 5k training artifacts generated (TSV + embeddings + meta) using cleaned missense_strict labels by default
-- [x] **Jan 20, 2026:** Added sanity checks for Week 2 artifacts (alignment/duplicates/balance)
-- [x] **Jan 26, 2026:** Implemented leakage-aware (gene-grouped) train/val/test splits and wrote split artifacts (Parquet + index files + meta)
+- [x] **Week 1**
+   - ESM2 ingestion pipeline implemented with label policies
+   - Proposal updated to coding-variant scope
+   - GitHub repository initialized and pushed
+   - Confirmed pickle numeric ID matches ClinVar VariationID; generated chr_pos_ref_alt mapping
+- [x] **Week 2**
+   - Proposal updated to missense-only scope and ClinVar-primary framing
+   - Week 2 5k training artifacts generated (TSV + embeddings + meta) using cleaned missense_strict labels by default
+   - Added sanity checks for Week 2 artifacts (alignment/duplicates/balance)
+- [x] **Week 3:** Implemented leakage-aware (gene-grouped) train/val/test splits and wrote split artifacts (Parquet + index files + meta)
 - [x] **Week 4:** Finalized curated dataset artifact + Week 4 EDA/go-no-go checks
 - [x] **Week 5:** Trained/evaluated baseline models (LogReg, shallow RF) + optional Platt calibration; saved reports/plots under `results/`
 - [x] **Week 6:** Seed robustness (seed 13 vs 37) + bootstrap confidence intervals on test set
-- [ ] **Week 7:** Hyperparameter selection (LogReg C-sweep, RF grid) + class imbalance handling review
-- [ ] **Week 8:** Threshold selection + statistical testing prep
+- [x] **Week 7:** Hyperparameter selection (LogReg C-sweep, RF grid) + class imbalance handling review
+- [x] **Week 8:** Threshold selection + statistical testing prep
 - [ ] **Week 12:** Final model selection and statistical validation
 - [ ] **Week 15:** Deployment and final presentation
 
