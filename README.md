@@ -64,7 +64,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 ├── config/                             # Configuration files and project decisions
 │   ├── decisions.md                   # Design decisions and rationale
 │   └── label_maps/                    # ClinVar label mapping configurations
-├── data/                               # Data directory (EXCLUDED from git - see .gitignore)
+├── data/                               # Local data directory (gitignored; not in remote repo)
 │   ├── clinvar/                       # ClinVar downloads (variant_summary.txt.gz, VCF)
 │   ├── Dylan Tan/                     # Lab-provided embeddings and curated tables
 │   └── processed/                     # Processed datasets (Parquet, NPY, TSV)
@@ -75,7 +75,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── week5_baseline_conclusion.md   # Baseline model selection summary
 │   ├── week6_seed_sensitivity.md      # Robustness testing across split seeds
 │   ├── week7_hyperparameter_selection.md  # Hyperparameter tuning decisions
-│   ├── week8_summary.md               # ✅ Week 8 comprehensive summary (NEW)
+│   ├── week8_summary.md               # ✅ Week 8 comprehensive summary 
 │   ├── chromosome_split_design.md     # Split strategy design document
 │   └── system-architecture.md         # System architecture overview
 ├── environment.yml                     # Conda environment specification
@@ -87,7 +87,7 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── Project_Proposal.md            # Full formal proposal (markdown)
 │   ├── Morenu_Project_Proposal.docx   # Word version for submission
 │   └── *.backup*.docx                 # Backup versions before edits
-├── research/                           # Literature review (EXCLUDED from git)
+├── research/                           # Local literature workspace (gitignored; not in remote repo)
 │   ├── README.md                      # Research notes index
 │   ├── Papers/                        # Research papers (PDFs excluded)
 │   └── citations.md                   # Citation tracking
@@ -123,9 +123,9 @@ egn6933-capstone-variant-pathogenicity-esm2/
 ### Important Notes on Excluded Files
 
 The following files and directories are **excluded from version control** (see `.gitignore`):
-- **`data/`** - All raw and processed data files (large binary files, embeddings, Parquet datasets)
+- **`data/`** - Local-only raw and processed data files (large binary files, embeddings, Parquet datasets; not in remote repo)
 - **`results/`** - All model evaluation outputs, plots, and performance reports
-- **`research/`** - Literature PDFs and personal research notes
+- **`research/`** - Local literature PDFs and personal research notes (not in remote repo)
 - **Binary artifacts:** `.pkl`, `.parquet`, `.npy`, `.pt`, `.pth`, `.h5` (machine learning artifacts)
 - **Documents:** `.pdf`, `.docx` (generated documents; keep only markdown sources)
 - **System files:** `.DS_Store`, `__pycache__/`, `.ipynb_checkpoints/`
@@ -447,6 +447,7 @@ Email: angel.morenu@ufl.edu
 
 - **Dylan Tan** for providing the cleaned missense dataset and aligned precomputed embedding features
 - **Dr. Xiao Fan** for project guidance and access to Lab via  HiPerGator computational resources
+- **Dr. Edwin Marte Zorrilla** for instruction and guidance throughout the capstone project
 - **ClinVar** and **Ensembl** for providing public genomic variant databases and annotation tools
 
 ---
