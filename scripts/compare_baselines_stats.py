@@ -10,7 +10,7 @@ This avoids IID assumptions by using paired resampling of *the same test
 examples* for both models.
 
 Example:
-  python scripts/compare_baselines_stats.py \
+python scripts/compare_baselines_stats.py \
     --data data/processed/week4_curated_dataset.parquet \
         --out "results/Week 5/compare_logreg_vs_rf_stats.json" \
     --bootstrap-iters 10000 \

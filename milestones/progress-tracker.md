@@ -6,7 +6,7 @@
 **Project Title:** Machine Learning Classification of Pathogenic vs. Benign Coding Genetic Variants Using Protein Language Model Embeddings  
 **Student Name:** Angel Morenu  
 **Faculty Advisor:** Dr. Fan  
-**Last Updated:** February 26, 2026
+**Last Updated:** March 13, 2026
 
 ---
 
@@ -304,6 +304,57 @@
 **Next Steps:**
 - Proceed to Week 9–12: error analysis, MLP implementation, homology audit, embedding visualization
 - Maintain RF as the reference baseline for all future model comparisons
+
+---
+
+### Week 9
+
+**Date:** March 5–11, 2026
+**Status:** ✅ Completed
+
+**Accomplished:**
+- [x] Implemented XGBoost with stratified k-fold CV and Bayesian hyperparameter search (per Dylan's guidance)
+  - Script: `scripts/xgboost_train_eval.py` (production-ready, 340 lines)
+  - Notebook: `notebooks/04_xgboost_gradient_boosting.ipynb` (interactive, 10 sections)
+  - Documentation: `docs/xgboost_implementation_guide.md`, `docs/xgboost_quick_reference.md`
+- [x] Ran XGBoost training: 50 Bayesian trials × 5-fold stratified CV on training set
+  - Best CV AUROC: 0.9738 (excellent generalization from CV to test)
+  - Best hyperparameters found: max_depth=6, learning_rate=0.0829, lambda=0.8373, subsample=0.7691, colsample_bytree=0.7395
+  - Class imbalance handled: scale_pos_weight=1.7473 (automatically computed)
+- [x] Evaluated on test set with Platt sigmoid calibration (fit on validation, eval on test)
+  - Test AUROC: 0.9265 (uncalibrated)
+  - Test AUPRC: 0.9437 (uncalibrated)
+  - Brier Score: 0.1334, Log Loss: 0.4110
+- [x] Generated outputs: PR/ROC curve plots, comprehensive JSON report with all metrics
+- [x] Compared XGBoost vs. RandomForest baseline (seed37)
+  - RF Test AUROC: 0.9299 vs XGBoost 0.9265 (−0.34% Δ AUROC, −0.36% Δ AUPRC)
+  - **Interpretation:** XGBoost slightly underperforms RF; results are within RF's 95% CI [0.9074, 0.9496]
+  - **Finding:** Gradient boosting offers no measurable advantage; RF remains optimal baseline
+- [x] Finalized Week 9 comparison artifacts under `results/Week 9/`
+  - `capstone_model_comparison_from_reports.csv`
+  - `capstone_rf_vs_xgb_delta.csv`
+  - `capstone_split_summary.csv`
+  - `dylan_vs_capstone_comparison.csv`
+  - `dylan_vs_capstone_summary_table.csv`
+
+**Key Findings & Story**:
+1. **Strong CV→Test generalization:** XGBoost CV AUROC 0.9738 → test 0.9265 indicates minimal overfitting
+2. **Class imbalance well-handled:** `scale_pos_weight` effectively balanced minority class without post-hoc threshold tuning
+3. **Comparable model performance:** Both XGBoost and RF achieve ~93% test AUROC, suggesting RF is well-suited to ESM2 embeddings
+4. **No ensemble benefit evident:** Will defer ensemble exploration to Week 11+ if time permits
+
+**Advisor Guidance Applied (from Dr. Fan)**:
+- ✅ Gradient boosting provides good "computational skills practice"
+- ✅ Results won't beat SOTA (expected and acceptable; Dr. Fan approved)
+- ✅ Focus now on **telling the complete story** (journey, insights, limitations) vs. chasing highest metrics
+- ✅ Prepare discussion of why XGBoost didn't improve over RF → leads into future work section
+
+**Next Steps:**
+- Week 10: Statistical testing (DeLong test: XGBoost vs RF, confirm non-significance)
+- Week 10: Error analysis on misclassified variants (both models)
+- Week 10–11: Homology-aware leakage audit (per Dr. Fan recommendation)
+- Week 11: Embedding visualization (UMAP/t-SNE by label and split)
+- Week 12: Finalize capstone narrative and presentation
 
 ---
 
