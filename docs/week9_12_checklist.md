@@ -19,8 +19,8 @@ This is a concrete Week 9–12 plan aligned to Phase 3 (Model Refinement & Error
 ## Phase 3 (Weeks 9–12) — High-level deliverables
 
 - [x] Train gradient boosting model (XGBoost) with stratified k-fold CV + Bayesian search
-- [ ] Statistically compare XGBoost vs. RandomForest baseline (DeLong test)
-- [ ] Error analysis on misclassified variants (both RF and XGBoost)
+- [x] Statistically compare XGBoost vs. RandomForest baseline (DeLong test)
+- [x] Error analysis on misclassified variants (both RF and XGBoost)
 - [ ] Homology-aware leakage audit (protein similarity screening across splits)
 - [ ] Embedding-space visualization (UMAP/t-SNE by label and split)
 - [ ] Capstone narrative finalization (methodology, findings, limitations, future work)
@@ -79,55 +79,56 @@ jupyter notebook notebooks/04_xgboost_gradient_boosting.ipynb
 
 ## Week 10 — Statistical validation and error analysis
 
-**Status:** 🟡 In progress
+**Status:** ✅ Completed
 
 ### 10.1: Statistical Comparison (XGBoost vs. RandomForest)
 
-- [ ] Implement DeLong test for AUROC comparison
-  - [ ] Test if XGBoost AUROC (0.9265) is statistically significantly different from RF AUROC (0.9299)
-  - [ ] Expected outcome: p-value > 0.05 (no significant difference)
-  - [ ] Generate comparison figure and save to `results/xgboost_vs_rf_delong_test.json`
+- [x] Implement DeLong test for AUROC comparison
+  - [x] Tested whether XGBoost AUROC (0.9265) differs from RF AUROC (0.9299)
+  - [x] Result: DeLong p-value = 0.5523 (no statistically significant difference)
+  - [x] Generated comparison outputs: `results/xgboost_vs_rf_statistical_comparison.json`, `results/xgboost_vs_rf_bootstrap_deltas.png`
 
-- [ ] Paired bootstrap confidence intervals
-  - [ ] 1000 bootstrap iterations on test set
-  - [ ] Report 95% CIs for ΔAUROC (RF−XGBoost) and ΔAUPRC
-  - [ ] Expected: CI includes zero (no significant advantage to either model)
+- [x] Paired bootstrap confidence intervals
+  - [x] 1000 paired bootstrap iterations on the same held-out test set
+  - [x] Reported 95% CIs for ΔAUROC (XGB−RF) and ΔAUPRC (XGB−RF)
+  - [x] ΔAUROC CI = [-0.01445, 0.00767], ΔAUPRC CI = [-0.01392, 0.00607] (both include zero)
 
 **Recommended commands (Week 10.1):**
 ```bash
-# DeLong test (implement in new script: scripts/compare_xgboost_vs_rf.py)
 python scripts/compare_xgboost_vs_rf.py \
+  --data data/processed/week4_curated_dataset.parquet \
   --rf-report results/baseline_rf_seed37_bootstrap.json \
   --xgb-report results/xgboost_train_eval_report.json \
-  --out-json results/xgboost_vs_rf_statistical_comparison.json
+  --bootstrap-iters 1000 \
+  --out-json results/xgboost_vs_rf_statistical_comparison.json \
+  --plot-deltas results/xgboost_vs_rf_bootstrap_deltas.png
 ```
 
 ### 10.2: Error Analysis on Misclassified Variants
 
-- [ ] Identify misclassified variants
-  - [ ] False positives (benign predicted pathogenic) from both RF and XGBoost
-  - [ ] False negatives (pathogenic predicted benign) from both RF and XGBoost
-  - [ ] Extract variant annotations: gene, transcript, consequence, ClinVar classification, prediction score
+- [x] Identify misclassified variants
+  - [x] Extracted false positives and false negatives for both RF and XGBoost
+  - [x] Captured variant-level identifiers and gene annotations on test split
 
-- [ ] Analyze error patterns
-  - [ ] Are certain genes/proteins more error-prone?
-  - [ ] Do variants with low-confidence ESM2 embeddings have higher error rates?
-  - [ ] Are errors correlated with embedding-space distance (e.g., outliers)?
-  - [ ] Compare error rates between RF and XGBoost: do they misclassify the same variants?
+- [x] Analyze error patterns
+  - [x] Computed gene-level error rates and top error-prone genes
+  - [x] Compared overlap/disagreement between RF and XGBoost errors
+  - [x] Summarized confidence behavior for correct vs incorrect predictions
+  - [→ Week 11.2] Embedding-space distance / outlier linkage (deferred to embedding visualization work)
 
-- [ ] Generate error analysis report
-  - [ ] Saved to: `results/error_analysis_report.json`
-  - [ ] Include: top genes with highest error rates, error types (FP vs FN distribution), confidence score analysis
-  - [ ] Saved visualizations: confusion matrices, error-rate heatmap by gene (if applicable)
+- [x] Generate error analysis report
+  - [x] Saved to: `results/error_analysis_report.json`
+  - [x] Saved misclassified variants table: `results/error_analysis_misclassified_variants.csv`
+  - [x] Saved confusion matrix visualization: `results/confusion_matrix_rf_vs_xgb.png`
 
 **Recommended commands (Week 10.2):**
 ```bash
-# Error analysis (implement in new script: scripts/error_analysis.py)
 python scripts/error_analysis.py \
   --data data/processed/week4_curated_dataset.parquet \
-  --rf-predictions results/baseline_rf_seed37_bootstrap.json \
-  --xgb-predictions results/xgboost_train_eval_report.json \
+  --rf-report results/baseline_rf_seed37_bootstrap.json \
+  --xgb-report results/xgboost_train_eval_report.json \
   --out-json results/error_analysis_report.json \
+  --out-csv results/error_analysis_misclassified_variants.csv \
   --plot-confusion results/confusion_matrix_rf_vs_xgb.png
 ```
 
@@ -260,8 +261,8 @@ python scripts/generate_capstone_summary.py \
 
 - [x] Gradient boosting model (XGBoost) trained with Bayesian search and stratified k-fold CV
 - [x] XGBoost compared statistically vs. RandomForest baseline (interpretation: comparable performance)
-- [ ] Statistical significance test completed (DeLong test)
-- [ ] Error analysis report generated (misclassified variants, error patterns)
+- [x] Statistical significance test completed (DeLong test)
+- [x] Error analysis report generated (misclassified variants, error patterns)
 - [ ] Homology-aware leakage audit completed (protein similarity screening)
 - [ ] Embedding-space visualization generated (UMAP/t-SNE by label and split)
 - [ ] Capstone narrative finalized (methods, findings, limitations, future work)

@@ -358,6 +358,40 @@
 
 ---
 
+### Week 10
+
+**Date:** March 12–16, 2026
+**Status:** 🟡 In progress (core analyses completed)
+
+**Accomplished:**
+- [x] Implemented RF vs XGBoost statistical comparison workflow (same held-out test set)
+  - DeLong test p-value: **0.5523** (no significant AUROC difference)
+  - ΔAUROC (XGB−RF): **−0.00342**
+  - ΔAUPRC (XGB−RF): **−0.00365**
+- [x] Completed paired bootstrap deltas (1000 paired resamples)
+  - ΔAUROC 95% CI: **[−0.01445, 0.00767]** (includes 0)
+  - ΔAUPRC 95% CI: **[−0.01392, 0.00607]** (includes 0)
+- [x] Implemented misclassification error analysis for both models
+  - Generated variant-level misclassification table (FP/FN) on test split
+  - Generated confusion matrix comparison plot (RF vs XGBoost)
+  - Generated gene-level and confidence-based error summaries
+- [x] Key error-rate findings:
+  - RF test error rate: **0.146**
+  - XGBoost test error rate: **0.190**
+  - Shared errors (both wrong): **56** test variants
+
+**Interpretation:**
+- Week 10 statistical evidence supports Week 9 conclusion: XGBoost does not significantly outperform RF on this dataset.
+- RF remains the practical reference model while Week 11 focuses on homology audit and embedding-space diagnostics.
+
+**Next Steps:**
+- Complete homology-aware leakage audit (Week 11)
+- Generate UMAP/t-SNE visualization by label/split (Week 11)
+- Extend error analysis with embedding-distance/outlier diagnostics
+- Prepare Week 12 capstone narrative + presentation artifacts
+
+---
+
 ### Meeting 1
 **Date:** February 17, 2026
 
