@@ -56,3 +56,71 @@ python scripts/xgboost_train_eval.py --n-trials 20
 - Test AUPRC: 0.9437 (comparable to RF baseline 0.9473)
 - Best hyperparameters: max_depth=6, learning_rate=0.0829, lambda=0.8373, subsample=0.7691, colsample_bytree=0.7395
 - Conclusion: XGBoost and RandomForest achieve comparable performance; gradient boosting offers no measurable advantage on this dataset/embedding space. RF remains the reference baseline.
+
+## Week 11: Homology Audit + Embedding Visualization + Sequence Confirmation
+
+### `homology_audit.py`
+
+**Purpose**: Calibrated embedding-proxy homology leakage screening across train/val/test.
+
+```bash
+# Strict calibrated proxy (recommended default)
+python scripts/homology_audit.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --similarity-threshold 0.9 \
+  --background-quantile 0.999 \
+  --out-json results/homology_leakage_audit.json \
+  --out-report results/homology_audit_report.txt
+
+# Sensitivity run (less strict)
+python scripts/homology_audit.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --similarity-threshold 0.9 \
+  --background-quantile 0.999 \
+  --allow-one-way \
+  --out-json results/homology_leakage_audit_oneway.json \
+  --out-report results/homology_audit_report_oneway.txt
+```
+
+### `embedding_visualization.py`
+
+**Purpose**: 2D embedding-space projections for stakeholder diagnostics (label/split/agreement views).
+
+```bash
+python scripts/embedding_visualization.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --method tsne \
+  --color-by label \
+  --out-png results/embedding_tsne_by_label.png \
+  --out-json results/embedding_tsne_by_label_summary.json
+
+python scripts/embedding_visualization.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --method tsne \
+  --color-by split \
+  --out-png results/embedding_tsne_by_split.png \
+  --out-json results/embedding_tsne_by_split_summary.json
+```
+
+### `homology_sequence_followup.py`
+
+**Purpose**: Sequence-level confirmation for flagged proxy pairs using Smith-Waterman alignment.
+
+```bash
+# Uses flagged pairs from homology audit and optional UniProt sequence fetch
+python scripts/homology_sequence_followup.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --audit-json results/homology_leakage_audit.json \
+  --pair-scope train_vs_test \
+  --fetch-uniprot \
+  --identity-threshold 0.90 \
+  --min-coverage 0.50 \
+  --out-json results/homology_sequence_followup.json \
+  --out-csv results/homology_sequence_pair_results.csv \
+  --out-report results/homology_sequence_followup_report.txt
+```
+
+**Outputs**:
+- `results/homology_sequence_followup.json`
+- `results/homology_sequence_pair_results.csv`
+- `results/homology_sequence_followup_report.txt`

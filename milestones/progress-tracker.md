@@ -6,7 +6,13 @@
 **Project Title:** Machine Learning Classification of Pathogenic vs. Benign Coding Genetic Variants Using Protein Language Model Embeddings  
 **Student Name:** Angel Morenu  
 **Faculty Advisor:** Dr. Fan  
-**Last Updated:** March 13, 2026
+**Last Updated:** March 18, 2026
+
+**Execution Checklists:**
+- Weeks 1–4: `docs/week1_4_checklist.md`
+- Weeks 5–8: `docs/week5_8_checklist.md`
+- Weeks 9–12: `docs/week9_12_checklist.md`
+- Weeks 13–15: `docs/week13_15_checklist.md`
 
 ---
 
@@ -24,7 +30,6 @@
 ## Course Milestones
 
 ### Milestone 1: Project Planning & Setup
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
 - [x] Present preliminary project idea in class
@@ -38,7 +43,6 @@
 ---
 
 ### Milestone 2: Literature Review & Related Work
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
 - [ ] Comprehensive literature review
@@ -52,7 +56,6 @@
 ---
 
 ### Milestone 3: Data Collection & Exploration
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
 - [x] Dataset acquired and documented
@@ -66,7 +69,6 @@
 ---
 
 ### Milestone 4: Methodology & Implementation Plan
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
 - [ ] Detailed methodology document
@@ -80,7 +82,6 @@
 ---
 
 ### Milestone 5: Initial Development
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
 - [x] Baseline model/system implementation
@@ -94,13 +95,12 @@
 ---
 
 ### Milestone 6: Refinement & Optimization
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
-- [ ] Improved model/system
-- [ ] Comparative analysis
-- [ ] Performance optimization
-- [ ] Validation results
+- [x] Improved model/system
+- [x] Comparative analysis
+- [x] Performance optimization
+- [x] Validation results
 
 **Notes:**
 
@@ -108,13 +108,12 @@
 ---
 
 ### Milestone 7: Evaluation & Testing
-**Target Date:** [TBD - check syllabus]
 
 **Deliverables:**
-- [ ] Comprehensive evaluation framework
-- [ ] Testing results and analysis
-- [ ] Error analysis and limitations
-- [ ] Documentation updates
+- [x] Comprehensive evaluation framework
+- [x] Testing results and analysis
+- [x] Error analysis and limitations
+- [x] Documentation updates
 
 **Notes:**
 
@@ -139,6 +138,7 @@
 ## Weekly Progress Log
 
 ### Week 1 (January 2026)
+**Status:** ✅ Completed
 **Date:** January 7–15, 2026
 
 **Accomplished:**
@@ -161,6 +161,7 @@
 ---
 
 ### Week 2
+**Status:** ✅ Completed
 
 **Date:** January 16–23, 2026
 
@@ -178,6 +179,7 @@
 
 
 ### Week 3
+**Status:** ✅ Completed
 
 **Date:** January 24–31, 2026
 
@@ -194,6 +196,7 @@
 ---
 
 ### Week 4
+**Status:** ✅ Completed
 
 **Date:** February 1–7, 2026
 
@@ -211,6 +214,7 @@
 ---
 
 ### Week 5
+**Status:** ✅ Completed
 
 **Date:** February 8, 2026
 
@@ -232,6 +236,7 @@
 ---
 
 ### Week 6
+**Status:** ✅ Completed
 
 **Date:** February 9–23, 2026
 
@@ -252,6 +257,7 @@
 ---
 
 ### Week 7
+**Status:** ✅ Completed
 
 **Date:** February 24–26, 2026
 
@@ -279,6 +285,7 @@
 ---
 
 ### Week 8
+**Status:** ✅ Completed
 
 **Date:** March 3–7, 2026
 
@@ -361,7 +368,7 @@
 ### Week 10
 
 **Date:** March 12–16, 2026
-**Status:** 🟡 In progress (core analyses completed)
+**Status:** ✅ Completed (core analyses)
 
 **Accomplished:**
 - [x] Implemented RF vs XGBoost statistical comparison workflow (same held-out test set)
@@ -389,6 +396,71 @@
 - Generate UMAP/t-SNE visualization by label/split (Week 11)
 - Extend error analysis with embedding-distance/outlier diagnostics
 - Prepare Week 12 capstone narrative + presentation artifacts
+
+---
+
+### Week 11
+
+**Date:** March 16, 2026
+**Status:** ✅ Completed (homology audit track)
+
+**Accomplished:**
+- [x] Implemented calibrated embedding-proxy homology audit: `scripts/homology_audit.py`
+- [x] Added stricter filtering (background-calibrated threshold + mutual nearest-neighbor matching)
+- [x] Generated proxy audit outputs:
+  - `results/homology_leakage_audit.json`
+  - `results/homology_audit_report.txt`
+- [x] Proxy audit key result:
+  - Initial naive proxy: `test_leakage_rate_proxy = 0.776`
+  - Calibrated proxy: `test_leakage_rate_proxy = 0.318`
+  - Direct same-gene overlap across splits: `0`
+- [x] Implemented embedding visualization pipeline: `scripts/embedding_visualization.py`
+- [x] Generated Week 11 figures:
+  - `results/embedding_tsne_by_label.png`
+  - `results/embedding_tsne_by_split.png`
+- [x] Implemented sequence-level follow-up pipeline: `scripts/homology_sequence_followup.py`
+  - Consumes flagged train-test pairs from proxy audit
+  - Runs Smith-Waterman alignment with identity/coverage thresholds
+  - Writes:
+    - `results/homology_sequence_followup.json`
+    - `results/homology_sequence_pair_results.csv`
+    - `results/homology_sequence_followup_report.txt`
+  - Final confirmation status: `complete`
+  - Flagged pair assessed: `KMT2D` (train) vs `ARID1A` (test), UniProt `O14686` vs `O14497`
+  - Alignment summary: identity `0.4394`, low coverage, `confirmed = False`
+  - Confirmed leakage result: `confirmed_rate = 0.0`, material leakage `False`
+
+**Interpretation:**
+- The large drop (0.776 → 0.318) indicates the naive proxy over-flagged cross-split similarity.
+- Sequence-level confirmation for the currently flagged pair did not satisfy high-identity/high-coverage homology criteria.
+- Current evidence does not indicate material homology leakage in the held-out test split.
+
+**Next Steps:**
+- Finalize Week 12 capstone narrative with calibrated proxy + sequence-confirmation findings.
+- Complete embedding-visualization interpretation text for presentation.
+
+---
+
+### Week 12
+
+**Date:** March 18, 2026  
+**Status:** 🟡 In progress (execution started)
+
+**Execution Started Note:**
+- Week 12 capstone write-up execution has started.
+- Drafted executive summary document: `docs/capstone_summary.md`.
+- Focus for current block: finalize narrative synthesis (statistical validation + homology confirmation) and prepare presentation-ready interpretation text.
+
+**Accomplished (to date):**
+- [x] Started Week 12 execution block and drafted `docs/capstone_summary.md`.
+- [x] Consolidated model-selection narrative using RF vs XGBoost statistical evidence (DeLong + paired bootstrap).
+- [x] Integrated calibrated proxy + sequence-confirmation homology findings into capstone narrative.
+- [x] Completed embedding-visualization interpretation text for presentation framing.
+
+**Next Steps:**
+- Finalize `README.md` result-story sections (model comparison, error analysis, homology, limitations, future work).
+- Complete Week 12 presentation slide content and figure selection.
+- Package poster-ready figures and final submission artifact checklist.
 
 ---
 

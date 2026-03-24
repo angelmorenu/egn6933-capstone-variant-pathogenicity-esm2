@@ -33,11 +33,54 @@ This capstone project develops a machine learning pipeline to classify missense 
 - ✅ **Transfer Learning:** Leverages pretrained protein language models (ESM2) for feature extraction
    - All variants used in modeling are mapped to and uniquely identified by **Dylan's precomputed ESM2 embeddings**, ensuring full traceability and compliance with project requirements.
 - ✅ **Leakage-Aware Evaluation:** Gene/protein-aware train/test splits prevent inflated performance
-  - Planned: Homology-aware audit to screen for sequence similarity across splits
+   - Includes homology-aware leakage auditing with sequence-level confirmation workflow.
 - ✅ **Rigorous Statistics:** Bootstrapped confidence intervals, DeLong tests, McNemar exact tests, paired comparisons
 - ✅ **Production-Ready:** Reproducible pipeline with cached embeddings, versioned datasets, and deployment interfaces
 - ✅ **Class Imbalance Handling:** Class weighting, threshold tuning, AUROC-first evaluation (AUPRC reported as secondary)
 - ✅ **Interpretability:** Feature importance, calibrated probabilities, embedding-space visualization (UMAP/t-SNE), attribution analysis
+
+## Week 11 Findings
+
+- Calibrated embedding-proxy homology audit completed.
+- Sequence-level follow-up on flagged pair `KMT2D` (train) vs `ARID1A` (test), UniProt `O14686` vs `O14497`, did **not** confirm high-homology leakage under the configured identity/coverage thresholds.
+- Confirmed leakage estimate: `confirmed_rate = 0.0` (non-material impact).
+
+## Results Summary (Weeks 9–11)
+
+### Model Comparison (RF vs XGBoost)
+
+- Random Forest (RF) remained the practical reference model on the held-out gene-disjoint test split.
+- RF test AUROC: `0.9299`; XGBoost test AUROC: `0.9265`.
+- RF test AUPRC: `0.9473`; XGBoost test AUPRC: `0.9437`.
+- Statistical comparison showed no significant AUROC difference (DeLong `p = 0.5523`), and paired bootstrap confidence intervals for ΔAUROC/ΔAUPRC included zero.
+- Conclusion: XGBoost did not provide a measurable performance improvement over RF for this curated ESM2 setup.
+
+### Error Analysis Insights
+
+- RF error rate on test: `0.146`; XGBoost error rate on test: `0.190`.
+- Shared misclassifications: `56` variants, indicating stable hard cases rather than isolated model-specific failures.
+- Error patterns were concentrated near ambiguous boundary regions in embedding space.
+- Gene-level heterogeneity was observed, motivating targeted future data expansion for error-prone genes.
+
+### Homology Audit
+
+- Homology leakage was evaluated with a two-stage process: calibrated embedding-proxy screening plus sequence-level follow-up.
+- Sequence-level confirmation did not validate the currently flagged pair as high-homology leakage under configured thresholds.
+- Confirmed leakage estimate remained `0.0`, supporting robustness of the gene-disjoint evaluation design.
+
+### Limitations
+
+- The curated strict-label subset limits coverage of rare patterns and variant contexts.
+- ESM2 embeddings are powerful but not directly human-interpretable without additional attribution tooling.
+- Distribution/prevalence shifts can affect calibration behavior.
+- Results require external validation before clinical deployment.
+
+### Future Work
+
+- Expand dataset scope and external validation cohorts.
+- Add post-hoc explainability (e.g., SHAP/LIME) and richer structural-context features.
+- Evaluate ensemble strategies with established variant effect predictors.
+- Complete deployment artifacts (Streamlit + CLI) and final presentation deliverables.
 
 ## Repository Structure & Navigation Guide
 
@@ -75,12 +118,16 @@ egn6933-capstone-variant-pathogenicity-esm2/
 │   ├── week5_baseline_conclusion.md   # Baseline model selection summary
 │   ├── week6_seed_sensitivity.md      # Robustness testing across split seeds
 │   ├── week7_hyperparameter_selection.md  # Hyperparameter tuning decisions
-│   ├── week8_summary.md               # ✅ Week 8 comprehensive summary 
+│   ├── week8_summary.md               # Week 8 comprehensive summary 
+│   ├── week8_12_comprehensive_summary.md # Weeks 8-12 integrated findings summary
+│   ├── week9_12_checklist.md          # Weeks 9-12 execution checklist
+│   ├── capstone_summary.md            # Repository narrative summary (internal; final submission uses Final Report `.tex`)
+│   ├── week13_15_checklist.md         # Weeks 13-15 deployment & documentation checklist
 │   ├── chromosome_split_design.md     # Split strategy design document
 │   └── system-architecture.md         # System architecture overview
 ├── environment.yml                     # Conda environment specification
 ├── milestones/                         # Project timeline and progress tracking
-│   └── progress-tracker.md            # Weekly milestone tracker (UPDATED: Week 8 ✅)
+│   └── progress-tracker.md            # Weekly milestone tracker
 ├── notebooks/                          # Jupyter notebooks for exploration
 │   └── 01_eda_clinvar.ipynb           # ClinVar exploratory data analysis
 ├── project-proposal/                   # Formal capstone proposal (APPROVED)
@@ -358,11 +405,11 @@ python scripts/baseline_train_eval.py \
 - ✅ Seed robustness testing and bootstrap confidence intervals
 
 ### Phase 3: Refinement & Evaluation (Weeks 9-12)
-- [ ] Implement optional MLP
-- [ ] Bootstrapped confidence intervals and paired statistical tests (DeLong, McNemar)
-- [ ] **Homology-aware leakage audit:** Screen for high sequence similarity across train/val/test splits; adjust grouping if strong homology detected
-- [ ] **Embedding-space visualization:** Generate UMAP/t-SNE plot (colored by pathogenic/benign label and split assignment) as a stakeholder-facing diagnostic
-- [ ] Error analysis and interpretability
+- [x] Implement optional MLP
+- [x] Bootstrapped confidence intervals and paired statistical tests (DeLong, McNemar)
+- [x] **Homology-aware leakage audit:** Completed calibrated proxy + sequence-level follow-up; no confirmed material cross-split homology leakage in current flagged pairs
+- [x] **Embedding-space visualization:** Generated label/split/agreement embedding-space figures (`embedding_tsne_by_label.png`, `embedding_tsne_by_split.png`, `embedding_umap_by_label.png`, `embedding_umap_by_split.png`, `embedding_umap_by_model_agreement.png`; UMAP fallback to t-SNE in current environment)
+- [x] Error analysis and interpretability
 
 ### Phase 4: Deployment & Documentation (Weeks 13-15)
 - [ ] Streamlit web application
@@ -387,6 +434,7 @@ python scripts/baseline_train_eval.py \
 - [x] **Week 6:** Seed robustness (seed 13 vs 37) + bootstrap confidence intervals on test set
 - [x] **Week 7:** Hyperparameter selection (LogReg C-sweep, RF grid) + class imbalance handling review
 - [x] **Week 8:** Threshold selection + statistical testing prep
+- [x] **Week 11:** Completed homology leakage audit workflow (proxy + sequence confirmation; confirmed leakage rate = `0.0`, non-material) and embedding-space visualization deliverables (label/split/agreement figures)
 - [ ] **Week 12:** Final model selection and statistical validation
 - [ ] **Week 15:** Deployment and final presentation
 

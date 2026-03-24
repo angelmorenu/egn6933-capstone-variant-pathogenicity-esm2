@@ -21,9 +21,9 @@ This is a concrete Week 9–12 plan aligned to Phase 3 (Model Refinement & Error
 - [x] Train gradient boosting model (XGBoost) with stratified k-fold CV + Bayesian search
 - [x] Statistically compare XGBoost vs. RandomForest baseline (DeLong test)
 - [x] Error analysis on misclassified variants (both RF and XGBoost)
-- [ ] Homology-aware leakage audit (protein similarity screening across splits)
-- [ ] Embedding-space visualization (UMAP/t-SNE by label and split)
-- [ ] Capstone narrative finalization (methodology, findings, limitations, future work)
+- [x] Homology-aware leakage audit (protein similarity screening across splits)
+- [x] Embedding-space visualization (UMAP/t-SNE by label and split)
+- [x] Capstone narrative finalization (methodology, findings, limitations, future work)
 - [ ] Presentation and poster preparation
 
 ---
@@ -136,50 +136,92 @@ python scripts/error_analysis.py \
 
 ## Week 11 — Homology audit and embedding visualization
 
-**Status:** 🟡 Planned (per Dr. Fan recommendation)
+**Status:** ✅ Completed
 
 ### 11.1: Homology-Aware Leakage Audit
 
-- [ ] Compute protein sequence similarity across train/val/test splits
-  - [ ] Use BLAST or Smith-Waterman alignment to screen for highly similar proteins
-  - [ ] Flag variants on proteins with >90% sequence identity across split boundaries
-  - [ ] Estimate false leakage rate (# variants in "leaked" proteins / total test variants)
+- [x] Run embedding-proxy homology screen across train/val/test splits
+  - [x] Implemented calibrated centroid-cosine audit in `scripts/homology_audit.py`
+  - [x] Added background-calibrated thresholding + mutual-nearest-neighbor filtering
+  - [x] Initial proxy result: `test_leakage_rate_proxy = 0.318` (down from 0.776 after calibration)
+  - [x] Direct same-gene overlap across splits: 0 groups
 
-- [ ] Generate leakage audit report
-  - [ ] Saved to: `results/homology_leakage_audit.json`
-  - [ ] Report number of potentially leaked variants in each split
-  - [ ] If significant leakage detected (>5% of test set), consider re-evaluating with filtered test set
-  - [ ] Document findings and mitigation strategy
+- [x] Compute sequence-level protein similarity follow-up (required for final conclusion)
+  - [x] Implemented `scripts/homology_sequence_followup.py` (Smith-Waterman alignment pipeline)
+  - [x] Consumes flagged pairs from `results/homology_leakage_audit.json` (`train_vs_test` scope)
+  - [x] Computes identity and coverage thresholds (default: identity >= 0.90, coverage >= 0.50)
+  - [x] Resolved sequence source for flagged genes via UniProt retrieval
+  - [x] Re-ran and confirmed leakage rate with completed alignments
+  - [x] Final sequence result: flagged `KMT2D` (train) vs `ARID1A` (test), UniProt `O14686` vs `O14497`, identity `0.4394` with low coverage; pair not confirmed as high-homology leakage
+  - [x] Confirmed test leakage rate: `0.0000`; material leakage: `False`
+
+- [x] Generate proxy leakage audit report
+  - [x] Saved to: `results/homology_leakage_audit.json`
+  - [x] Saved narrative report: `results/homology_audit_report.txt`
+  - [x] Reported potentially flagged variants in each split (proxy-based)
+  - [x] Sequence-level confirmation completed for current flagged pair set
+
+- [x] Generate sequence-level follow-up report scaffold
+  - [x] Saved to: `results/homology_sequence_followup.json`
+  - [x] Saved pair-level table: `results/homology_sequence_pair_results.csv`
+  - [x] Saved narrative report: `results/homology_sequence_followup_report.txt`
+  - [x] Final result status: `complete`
 
 **Recommended commands (Week 11.1):**
 ```bash
-# Homology audit (implement in new script: scripts/homology_audit.py)
+# Calibrated embedding-proxy homology audit
 python scripts/homology_audit.py \
   --data data/processed/week4_curated_dataset.parquet \
-  --alignment-method blast \
   --similarity-threshold 0.9 \
+  --background-quantile 0.999 \
   --out-json results/homology_leakage_audit.json \
   --out-report results/homology_audit_report.txt
+
+# Sequence-level confirmation on flagged train-test pairs
+python scripts/homology_sequence_followup.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --audit-json results/homology_leakage_audit.json \
+  --pair-scope train_vs_test \
+  --fetch-uniprot \
+  --identity-threshold 0.90 \
+  --min-coverage 0.50 \
+  --out-json results/homology_sequence_followup.json \
+  --out-csv results/homology_sequence_pair_results.csv \
+  --out-report results/homology_sequence_followup_report.txt
+
+# Optional sensitivity run (less strict; allows one-way nearest neighbors)
+python scripts/homology_audit.py \
+  --data data/processed/week4_curated_dataset.parquet \
+  --similarity-threshold 0.9 \
+  --background-quantile 0.999 \
+  --allow-one-way \
+  --out-json results/homology_leakage_audit_oneway.json \
+  --out-report results/homology_audit_report_oneway.txt
 ```
 
 ### 11.2: Embedding-Space Visualization
 
-- [ ] Dimensionality reduction (UMAP or t-SNE)
-  - [ ] Reduce 2560-dimensional ESM2 embeddings to 2D using UMAP (preferred; faster) or t-SNE (preferred; interpretable)
-  - [ ] Color by label (benign=blue, pathogenic=red)
-  - [ ] Overlay split information (markers: train=circle, val=square, test=triangle)
-  - [ ] Generate high-resolution figure for capstone presentation
+- [x] Dimensionality reduction pipeline implemented and executed
+  - [x] `scripts/embedding_visualization.py` supports UMAP/t-SNE projections
+  - [x] Generated label-colored and split-colored t-SNE plots
+  - [x] Includes split-aware markers and JSON summaries
+  - [x] Final high-resolution figure selection for presentation completed (`results/embedding_umap_by_split.png`)
 
-- [ ] Analysis
-  - [ ] Are classes well-separated in embedding space?
-  - [ ] Are there visible clusters or outliers?
-  - [ ] Do val/test samples overlap well with train (or are there distribution gaps)?
-  - [ ] Generate accompanying summary: 3–5 sentences describing embedding-space characteristics
+- [x] Analysis
+  - [x] Are classes well-separated in embedding space?
+  - [x] Are there visible clusters or outliers?
+  - [x] Do val/test samples overlap well with train (or are there distribution gaps)?
+  - [x] Generate accompanying summary: 3–5 sentences describing embedding-space characteristics
 
-- [ ] Save visualizations
-  - [ ] `results/embedding_umap_by_label.png` (colored by label)
-  - [ ] `results/embedding_umap_by_split.png` (colored by split)
-  - [ ] `results/embedding_umap_by_model_agreement.png` (colored by RF/XGBoost agreement; optional)
+**Week 11.2 analysis summary (embedding space):**
+The embedding-space projection shows meaningful structure, with pathogenic and benign variants forming partially separated regions while still overlapping near boundary zones. Several localized dense regions are present, suggesting subpopulation clusters in ESM2 feature space rather than a single homogeneous manifold. Split-colored views indicate that train, validation, and test points cover comparable geometric regions, with no obvious large-scale distribution gap for the 5k curated set. This pattern is consistent with the observed model behavior: strong overall AUROC but concentrated errors near ambiguous boundary regions.
+
+- [x] Save visualizations
+  - [x] `results/embedding_tsne_by_label.png` (colored by label)
+  - [x] `results/embedding_tsne_by_split.png` (colored by split)
+  - [x] `results/embedding_umap_by_label.png` (requested UMAP; auto-fallback used in current environment)
+  - [x] `results/embedding_umap_by_split.png` (colored by split)
+  - [x] `results/embedding_umap_by_model_agreement.png` (colored by RF/XGBoost agreement; optional)
 
 **Recommended commands (Week 11.2):**
 ```bash
@@ -201,26 +243,32 @@ python scripts/embedding_visualization.py \
 
 ## Week 12 — Capstone narrative and presentation
 
-**Status:** 🟡 Planned
+**Status:** 🟡 In Progress (execution started)
+
+### Week 12 execution start (2026-03-18)
+
+- [x] Start the actual Week 12 execution block by drafting `docs/capstone_summary.md`
+- [x] Finalize Week 12 capstone narrative with calibrated proxy + sequence-confirmation findings
+- [x] Complete embedding-visualization interpretation text for presentation
 
 ### 12.1: Capstone Write-Up
 
-- [ ] Finalize `README.md` and project documentation
-  - [ ] Update "Results Summary" section with Week 9–11 findings
-  - [ ] Add "Model Comparison" subsection: RF vs XGBoost, why RF won
-  - [ ] Add "Error Analysis Insights" subsection: top error patterns, gene-level heterogeneity
-  - [ ] Add "Homology Audit" subsection: leakage risk assessment
-  - [ ] Add "Limitations" section: acknowledge class imbalance, embedding dimensionality, limited dataset size
-  - [ ] Add "Future Work" section: larger datasets, deep learning (MLP/CNN), ensemble methods, clinical validation
+- [x] Finalize `README.md` and project documentation
+  - [x] Update "Results Summary" section with Week 9–11 findings
+  - [x] Add "Model Comparison" subsection: RF vs XGBoost, why RF won
+  - [x] Add "Error Analysis Insights" subsection: top error patterns, gene-level heterogeneity
+  - [x] Add "Homology Audit" subsection: leakage risk assessment
+  - [x] Add "Limitations" section: acknowledge class imbalance, embedding dimensionality, limited dataset size
+  - [x] Add "Future Work" section: larger datasets, deep learning (MLP/CNN), ensemble methods, clinical validation
 
-- [ ] Create capstone summary document
-  - [ ] File: `docs/capstone_summary.md` (2–3 pages, executive summary)
-  - [ ] Include: problem statement, methodology, key findings, limitations, recommendations
-  - [ ] Target audience: technical + non-technical stakeholders
+- [x] Create capstone summary document
+  - [x] File: `docs/capstone_summary.md` (2–3 pages, executive summary)
+  - [x] Include: problem statement, methodology, key findings, limitations, recommendations
+  - [x] Target audience: technical + non-technical stakeholders
+  - [x] Note: repository support document only; final turn-in artifact is `Final Report/Morenu_EGN6933_FinalReport.tex`
 
-- [ ] Update `docs/week8_summary.md` to include Weeks 9–12 findings
-  - [ ] Extend to `docs/week8_12_comprehensive_summary.md`
-  - [ ] Add XGBoost results, error analysis, homology audit findings
+- [x] Update `docs/week8_summary.md` to include Weeks 9–12 findings
+  - [x] Add XGBoost results, error analysis, homology audit findings
 
 ### 12.2: Presentation & Poster
 
@@ -263,12 +311,12 @@ python scripts/generate_capstone_summary.py \
 - [x] XGBoost compared statistically vs. RandomForest baseline (interpretation: comparable performance)
 - [x] Statistical significance test completed (DeLong test)
 - [x] Error analysis report generated (misclassified variants, error patterns)
-- [ ] Homology-aware leakage audit completed (protein similarity screening)
-- [ ] Embedding-space visualization generated (UMAP/t-SNE by label and split)
-- [ ] Capstone narrative finalized (methods, findings, limitations, future work)
+- [x] Homology-aware leakage audit completed (protein similarity screening)
+- [x] Embedding-space visualization generated (UMAP/t-SNE by label and split)
+- [x] Capstone narrative finalized (methods, findings, limitations, future work)
 - [ ] Presentation slides and poster prepared
 - [ ] All code documented and reproducible from command line
-- [ ] Final README updated with complete project story and recommendations
+- [x] Final README updated with complete project story and recommendations
 
 ---
 
