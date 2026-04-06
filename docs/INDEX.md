@@ -14,7 +14,7 @@
 - **Want full technical details?** → Read `docs/DEPLOYMENT_INTERFACES.md`
 
 ### For Developers
-- **Streamlit app code** → `app.py` (499 lines)
+- **Streamlit app code** → `app/app.py` (499 lines)
 - **CLI code** → `scripts/score_variants.py` (568 lines)
 - **Verification** → Run `python verify_deployment.py`
 
@@ -31,7 +31,7 @@
 
 | File | Type | Lines | Purpose |
 |------|------|-------|---------|
-| `app.py` | Python | 499 | Streamlit web application with 5 sections |
+| `app/app.py` | Python | 499 | Streamlit web application with 5 sections |
 | `scripts/score_variants.py` | Python | 568 | Command-line interface for batch processing |
 | `requirements_deployment.txt` | Text | 25 | Python package dependencies |
 
@@ -56,7 +56,7 @@
 
 ## What's Included
 
-### ✅ Streamlit Web Application (`app.py`)
+### ✅ Streamlit Web Application (`app/app.py`)
 
 **5 Main Sections:**
 
@@ -202,7 +202,7 @@ Run anytime: `python verify_deployment.py`
 pip install streamlit scikit-learn plotly pandas numpy
 
 # 2. Run
-streamlit run app.py
+streamlit run app/app.py
 
 # 3. Open browser to http://localhost:8501
 
@@ -347,7 +347,7 @@ python scripts/baseline_train_eval.py
 → See "Troubleshooting" section in `DEPLOYMENT_QUICKSTART.md`
 
 ### For Code Understanding
-→ Read inline docstrings in `app.py` and `scripts/score_variants.py`
+→ Read inline docstrings in `app/app.py` and `scripts/score_variants.py`
 
 ### For Verification
 → Run `python verify_deployment.py`
@@ -360,7 +360,7 @@ python scripts/baseline_train_eval.py
 Project Root/
 │
 ├── DEPLOYMENT INTERFACES (Main Files)
-│   ├── app.py                           (Streamlit web app)
+│   ├── app/app.py                       (Streamlit web app)
 │   ├── scripts/score_variants.py        (CLI interface)
 │   └── requirements_deployment.txt      (Dependencies)
 │
@@ -415,7 +415,7 @@ Project Root/
 **Questions?**
 - Check troubleshooting guides in documentation
 - Run verification script: `python verify_deployment.py`
-- Review code comments in `app.py` and `scripts/score_variants.py`
+- Review code comments in `app/app.py` and `scripts/score_variants.py`
 - Contact: Angel Morenu (angelmorenu@ufl.edu)
 
 **Found a bug?**
@@ -425,7 +425,7 @@ Project Root/
 
 **Want to extend?**
 - See "Future Extensions" in `docs/DEPLOYMENT_INTERFACES.md`
-- Modify `app.py` for Streamlit enhancements
+- Modify `app/app.py` for Streamlit enhancements
 - Modify `scripts/score_variants.py` for CLI additions
 
 ---
@@ -447,7 +447,7 @@ Project Root/
 ## Quick Links
 
 - **Start here:** `DEPLOYMENT_QUICKSTART.md`
-- **Web app:** `app.py`
+- **Web app:** `app/app.py`
 - **CLI:** `scripts/score_variants.py`
 - **Technical:** `docs/DEPLOYMENT_INTERFACES.md`
 - **Verify:** `python verify_deployment.py`

@@ -11,10 +11,10 @@
 
 ### ✅ **Streamlit Web Application** (COMPLETED)
 
-**File:** `app.py` (800+ lines)
+**File:** `app/app.py` (800+ lines)
 
 **Features Implemented:**
-- [x] Build `app.py` with single-variant input and batch CSV upload
+- [x] Build `app/app.py` with single-variant input and batch CSV upload
   - Interactive form accepting canonical IDs (`chr_pos_ref_alt`) or manual entry
   - CSV file uploader with progress indicator
   - Ranked results table (sorted by pathogenicity, descending)
@@ -130,7 +130,7 @@
 
 | File | Type | Size | Purpose |
 |------|------|------|---------|
-| `app.py` | Python | 800 lines | Streamlit web application |
+| `app/app.py` | Python | 800 lines | Streamlit web application |
 | `scripts/score_variants.py` | Python | 600 lines | Command-line interface |
 | `docs/DEPLOYMENT_INTERFACES.md` | Markdown | 400 lines | Comprehensive deployment documentation |
 
@@ -203,7 +203,7 @@ numpy>=1.24.0
 - ⏳ Presentation slides in progress (due 4/9)
 
 **Total Implementation Time:** ~20-25 hours
-**Code Footprint:** 1,600+ lines (app.py + CLI + docs)
+**Code Footprint:** 1,600+ lines (`app/app.py` + CLI + docs)
 **Test Coverage:** Both interfaces tested and ready for deployment
 
 **Next Milestone:** Project presentation rehearsal and final submission preparation

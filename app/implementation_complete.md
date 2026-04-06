@@ -16,7 +16,7 @@ Comprehensive deployment interfaces have been successfully implemented for the v
 
 ## What Was Delivered
 
-### 1. **Streamlit Web Application** (`app.py`)
+### 1. **Streamlit Web Application** (`app/app.py`)
 - **Size:** 499 lines
 - **Status:** ✅ Complete
 - **Features:**
@@ -202,7 +202,7 @@ results_validation/
 ### Streamlit Architecture
 
 ```
-app.py
+app/app.py
 ├── Session State Management
 ├── Data Loading & Caching
 ├── Main Application (Navigation)
@@ -456,7 +456,7 @@ python verify_deployment.py
 
 ### Running Streamlit (1 minute)
 ```bash
-streamlit run app.py
+streamlit run app/app.py
 # Opens at http://localhost:8501
 ```
 
@@ -495,7 +495,7 @@ python scripts/score_variants.py --input variants.csv --output results.csv
 
 ```
 Project Root/
-├── app.py                              # Streamlit web application
+├── app/app.py                          # Streamlit web application
 ├── scripts/
 │   └── score_variants.py              # Command-line interface
 ├── docs/
@@ -538,7 +538,7 @@ Project Root/
 
 ### Immediate (Today)
 1. ✅ Run verification: `python verify_deployment.py`
-2. ✅ Test Streamlit: `streamlit run app.py`
+2. ✅ Test Streamlit: `streamlit run app/app.py`
 3. ✅ Test CLI: `python scripts/score_variants.py --help`
 
 ### Short-term (This Week)
@@ -582,7 +582,7 @@ Project Root/
 ## Files Created/Modified This Session
 
 **New Files (5):**
-1. `app.py` – Streamlit application (499 lines)
+1. `app/app.py` – Streamlit application (499 lines)
 2. `scripts/score_variants.py` – CLI interface (568 lines)
 3. `docs/DEPLOYMENT_INTERFACES.md` – Technical docs (484 lines)
 4. `DEPLOYMENT_QUICKSTART.md` – User guide (407 lines)

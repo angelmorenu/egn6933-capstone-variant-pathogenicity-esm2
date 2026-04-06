@@ -12,7 +12,7 @@ Comprehensive deployment interfaces have been implemented for the variant pathog
 
 ### What Was Delivered
 
-✅ **Streamlit Web Application** (`app.py`, 800+ lines)
+✅ **Streamlit Web Application** (`app/app.py`, 800+ lines)
 - Interactive single-variant scoring interface
 - Batch CSV upload with ranked results
 - Model performance dashboard with visualizations
@@ -40,7 +40,7 @@ Comprehensive deployment interfaces have been implemented for the variant pathog
 
 | File | Type | Lines | Purpose |
 |------|------|-------|---------|
-| `app.py` | Python | 800+ | Streamlit web application |
+| `app/app.py` | Python | 800+ | Streamlit web application |
 | `scripts/score_variants.py` | Python | 600+ | Command-line interface |
 | `docs/DEPLOYMENT_INTERFACES.md` | Markdown | 400+ | Technical documentation |
 | `DEPLOYMENT_QUICKSTART.md` | Markdown | 300+ | User guide with examples |
@@ -79,7 +79,7 @@ Comprehensive deployment interfaces have been implemented for the variant pathog
 
 **Deployment:**
 ```bash
-streamlit run app.py
+streamlit run app/app.py
 # http://localhost:8501
 ```
 
@@ -171,7 +171,7 @@ Both interfaces reference the same model performance metrics from the Final Repo
 pip install -r requirements_deployment.txt
 
 # Run application
-streamlit run app.py
+streamlit run app/app.py
 
 # Access at http://localhost:8501
 ```
@@ -247,7 +247,7 @@ python scripts/baseline_train_eval.py
 
 ### Local Development
 ```bash
-streamlit run app.py          # Web app
+streamlit run app/app.py      # Web app
 python scripts/score_variants.py  # CLI
 ```
 
@@ -334,7 +334,7 @@ python scripts/score_variants.py --input variants.csv --output results.csv
 ## Next Steps for User
 
 1. **Review Code**
-   - Read `app.py` for Streamlit implementation
+   - Read `app/app.py` for Streamlit implementation
    - Read `scripts/score_variants.py` for CLI implementation
 
 2. **Test Interfaces**
@@ -367,7 +367,7 @@ python scripts/score_variants.py --input variants.csv --output results.csv
 ## Files Included
 
 **Main Implementation:**
-- `app.py` – Streamlit web application
+- `app/app.py` – Streamlit web application
 - `scripts/score_variants.py` – Command-line interface
 - `requirements_deployment.txt` – Dependencies
 

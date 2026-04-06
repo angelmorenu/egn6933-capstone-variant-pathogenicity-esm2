@@ -160,8 +160,8 @@ print("=" * 70)
 if passed_count == total_count:
     print("\n✅ **DEPLOYMENT READY**")
     print("\nTo start Streamlit:")
-    print(f"  cd {APP_ROOT}")
-    print(f"  streamlit run app.py")
+    print(f"  cd {MAIN_ROOT}")
+    print(f"  streamlit run app/app.py")
     sys.exit(0)
 else:
     print("\n⚠️  **INSTALLATION INCOMPLETE**")

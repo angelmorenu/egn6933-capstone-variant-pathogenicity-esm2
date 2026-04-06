@@ -46,7 +46,7 @@ python scripts/baseline_train_eval.py
 
 ```bash
 # Run the application
-streamlit run app.py
+streamlit run app/app.py
 
 # Open browser to http://localhost:8501
 ```
@@ -85,13 +85,13 @@ streamlit run app.py
 
 ```bash
 # Run on custom host/port
-streamlit run app.py --server.port 8080 --server.address 0.0.0.0
+streamlit run app/app.py --server.port 8080 --server.address 0.0.0.0
 
 # Run in headless mode (for deployment)
-streamlit run app.py --logger.level=error --client.showErrorDetails=false
+streamlit run app/app.py --logger.level=error --client.showErrorDetails=false
 
 # Run with increased memory (for large datasets)
-streamlit run app.py --maxUploadSize=200
+streamlit run app/app.py --maxUploadSize=200
 ```
 
 ### Configuration
@@ -351,7 +351,7 @@ with open('data/processed/week2_training_table_strict_meta.json') as f:
 streamlit cache clear
 
 # Run with reduced logging
-streamlit run app.py --logger.level=error
+streamlit run app/app.py --logger.level=error
 
 # Use faster embeddings (if available)
 # See code comments for optimization options

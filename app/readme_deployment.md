@@ -6,7 +6,7 @@ This directory contains production-ready deployment interfaces for the variant p
 
 ### What's Included
 
-- **Streamlit Web Application** (`app.py`) – Interactive web interface for researchers
+- **Streamlit Web Application** (`app/app.py`) – Interactive web interface for researchers
 - **Command-Line Interface** (`scripts/score_variants.py`) – Automation-friendly batch processing
 - **Comprehensive Documentation** – Architecture, usage, and deployment guides
 - **Verification Script** (`verify_deployment.py`) – Automated validation tool
@@ -22,7 +22,7 @@ This directory contains production-ready deployment interfaces for the variant p
 pip install streamlit scikit-learn plotly pandas numpy
 
 # Run the web app
-streamlit run app.py
+streamlit run app/app.py
 
 # Open browser to http://localhost:8501
 ```
@@ -245,7 +245,7 @@ chr2_150000_T_C,0.3421,BENIGN,0.8765,RandomForest,2026-03-20T15:30:46.234567
 ### Local Machine
 ```bash
 # Web app
-streamlit run app.py
+streamlit run app/app.py
 
 # CLI
 python scripts/score_variants.py --input variants.csv --output results.csv
@@ -314,7 +314,7 @@ python scripts/build_week2_training_table.py
 streamlit cache clear
 
 # Run with reduced logging
-streamlit run app.py --logger.level=error
+streamlit run app/app.py --logger.level=error
 ```
 
 ### CLI batch processing is slow
@@ -359,7 +359,7 @@ python verify_deployment.py --streamlit
 ## Files Included
 
 ```
-├── app.py                              (800+ lines, Streamlit web app)
+├── app/app.py                          (800+ lines, Streamlit web app)
 ├── scripts/
 │   └── score_variants.py              (600+ lines, CLI interface)
 ├── docs/
@@ -392,7 +392,7 @@ MIT License – See LICENSE file in project root
 1. **Install dependencies:** `pip install -r requirements_deployment.txt`
 2. **Verify setup:** `python verify_deployment.py`
 3. **Choose interface:**
-   - Interactive: `streamlit run app.py`
+  - Interactive: `streamlit run app/app.py`
    - Command-line: `python scripts/score_variants.py --help`
 4. **Read documentation:** See DEPLOYMENT_QUICKSTART.md for detailed examples
 5. **Deploy to production:** See DEPLOYMENT_INTERFACES.md for deployment options

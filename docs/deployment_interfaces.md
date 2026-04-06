@@ -4,7 +4,7 @@
 
 This document describes two production-ready deployment interfaces for the variant pathogenicity prediction model:
 
-1. **Streamlit Web Application** (`app.py`) – Interactive web interface for single-variant and batch scoring
+1. **Streamlit Web Application** (`app/app.py`) – Interactive web interface for single-variant and batch scoring
 2. **Command-Line Interface** (`scripts/score_variants.py`) – Automation-friendly batch processing tool
 
 Both interfaces use the same trained Random Forest model and precomputed ESM2 embeddings, ensuring consistency with the Final Report metrics.
@@ -78,7 +78,7 @@ Both interfaces use the same trained Random Forest model and precomputed ESM2 em
 ### Architecture
 
 ```
-app.py (streamlit application)
+app/app.py (streamlit application)
 ├── SESSION STATE & CONFIGURATION
 │   ├── Streamlit page config (layout, title, icons)
 │   ├── Custom CSS styling (metric cards, color-coded predictions)
@@ -140,10 +140,10 @@ app.py (streamlit application)
 pip install streamlit scikit-learn plotly pandas numpy
 
 # Run the application (default: http://localhost:8501)
-streamlit run app.py
+streamlit run app/app.py
 
 # Run on custom host/port
-streamlit run app.py --server.port 8080 --server.address 0.0.0.0
+streamlit run app/app.py --server.port 8080 --server.address 0.0.0.0
 ```
 
 ### Data Requirements
@@ -171,7 +171,7 @@ models/
 # Push to GitHub, then:
 # 1. Visit https://share.streamlit.io
 # 2. Connect your GitHub repo
-# 3. Select branch and app.py
+# 3. Select branch and app/app.py
 # 4. Deploy
 ```
 
@@ -186,7 +186,7 @@ RUN pip install -r requirements.txt
 COPY . .
 
 EXPOSE 8501
-CMD ["streamlit", "run", "app.py"]
+CMD ["streamlit", "run", "app/app.py"]
 ```
 
 #### Deploy to Heroku / AWS / Google Cloud
