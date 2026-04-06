@@ -52,13 +52,14 @@ This capstone project develops a machine learning pipeline to classify missense 
 - Random Forest (RF) remained the practical reference model on the held-out gene-disjoint test split.
 - RF test AUROC: `0.9299`; XGBoost test AUROC: `0.9265`.
 - RF test AUPRC: `0.9473`; XGBoost test AUPRC: `0.9437`.
+- Current curated dataset composition (`week4_curated_dataset.parquet`): `n=5000` total, `1839` pathogenic (`36.78%`) and `3161` benign (`63.22%`).
 - Statistical comparison showed no significant AUROC difference (DeLong `p = 0.5523`), and paired bootstrap confidence intervals for ΔAUROC/ΔAUPRC included zero.
 - Conclusion: XGBoost did not provide a measurable performance improvement over RF for this curated ESM2 setup.
 
 ### Error Analysis Insights
 
 - RF error rate on test: `0.146`; XGBoost error rate on test: `0.190`.
-- Shared misclassifications: `56` variants, indicating stable hard cases rather than isolated model-specific failures.
+- Shared misclassifications: `56` variants (equivalent to `76.7%` of RF errors, `58.9%` of XGBoost errors, and `50.0%` of the union of misclassified variants), indicating stable hard cases rather than isolated model-specific failures.
 - Error patterns were concentrated near ambiguous boundary regions in embedding space.
 - Gene-level heterogeneity was observed, motivating targeted future data expansion for error-prone genes.
 
@@ -73,6 +74,7 @@ This capstone project develops a machine learning pipeline to classify missense 
 - The curated strict-label subset limits coverage of rare patterns and variant contexts.
 - ESM2 embeddings are powerful but not directly human-interpretable without additional attribution tooling.
 - Distribution/prevalence shifts can affect calibration behavior.
+- Example per-variant scores shown in deployment docs are illustrative interface examples and should not be interpreted as fixed ground-truth outputs across all app modes.
 - Results require external validation before clinical deployment.
 
 ### Future Work
