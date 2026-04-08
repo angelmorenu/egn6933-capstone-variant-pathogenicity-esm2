@@ -1,0 +1,3 @@
+variant_id,pathogenicity_score,prediction,confidence,model,timestamp
+12_6018629_G_A,0.871050563,PATHOGENIC,0.871050563,RandomForest,2026-04-08T14:45:01.847072
+12_6018535_A_G,0.689261367,PATHOGENIC,0.689261367,RandomForest,2026-04-08T14:45:01.847033

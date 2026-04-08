@@ -1,0 +1,2 @@
+variant_id,pathogenicity_score,prediction,confidence,model,timestamp
+1_1022225_G_A,0.47851360840170754,BENIGN,0.5214863915982924,RandomForest,2026-04-08T14:03:42.843630

@@ -11,13 +11,13 @@ Supports both single-variant and batch-file scoring modes with CSV/JSON output o
 
 Usage:
     # Single variant scoring
-    python scripts/score_variants.py --variant chr1_100000_A_G
+    python scripts/score_variants.py --variant chr1_1022225_G_A --output app/demo_outputs/cli_real_model_output.csv
 
     # Batch CSV scoring
-    python scripts/score_variants.py --input variants.csv --output results.csv --format csv
+    python scripts/score_variants.py --input app/demo_outputs/demo_batch_upload_score_source.csv --output app/demo_outputs/cli_batch_output.csv --format csv
 
-    # Batch VCF-derived input
-    python scripts/score_variants.py --input variants.tsv --output results.json --format json
+    # Batch TSV input with JSON output
+    python scripts/score_variants.py --input variants.tsv --output app/demo_outputs/results.json --format json
 
 Author: Angel Morenu
 Date: March 2026
@@ -86,23 +86,44 @@ def load_embeddings_and_metadata(strict: bool = True) -> Tuple[np.ndarray, Dict[
         FileNotFoundError: If data files cannot be located
     """
     dataset_type = "strict" if strict else "default"
+
+    curated_parquet = DATA_DIR / "week4_curated_dataset.parquet"
+    if curated_parquet.exists():
+        curated_df = pd.read_parquet(curated_parquet, columns=["chr_pos_ref_alt", "label", "split", "embedding"])
+        if "chr_pos_ref_alt" not in curated_df.columns or "embedding" not in curated_df.columns:
+            raise ValueError(f"Curated dataset is missing required columns: {curated_parquet}")
+
+        embeddings = np.stack(curated_df["embedding"].tolist(), axis=0)
+        variant_id_map = {
+            str(variant_id): index
+            for index, variant_id in enumerate(curated_df["chr_pos_ref_alt"].astype(str).tolist())
+        }
+        metadata = {
+            "source": "week4_curated_dataset.parquet",
+            "variant_id_map": variant_id_map,
+            "labels": curated_df["label"].astype(int).tolist() if "label" in curated_df.columns else None,
+            "splits": curated_df["split"].astype(str).tolist() if "split" in curated_df.columns else None,
+            "n_variants": len(curated_df),
+        }
+        return embeddings, metadata
+
     embeddings_file = DATA_DIR / f"week2_training_table_{dataset_type}_cleaned_smoke_embeddings.npy"
     metadata_file = DATA_DIR / f"week2_training_table_{dataset_type}_cleaned_smoke_meta.json"
-    
+
     if not embeddings_file.exists():
         raise FileNotFoundError(f"Embeddings file not found: {embeddings_file}")
     if not metadata_file.exists():
         raise FileNotFoundError(f"Metadata file not found: {metadata_file}")
-    
+
     embeddings = np.load(embeddings_file)
-    
+
     with open(metadata_file, 'r') as f:
         metadata = json.load(f)
-    
+
     return embeddings, metadata
 
 
-def load_trained_model(model_path: Optional[Path] = None) -> RandomForestClassifier:
+def load_trained_model(model_path: Optional[Path] = None, n_features: int = 1280) -> RandomForestClassifier:
     """
     Load trained Random Forest model.
     
@@ -125,11 +146,13 @@ def load_trained_model(model_path: Optional[Path] = None) -> RandomForestClassif
     print("[INFO] Train and save model using: pickle.dump(model, open('models/rf_model.pkl', 'wb'))")
     
     from sklearn.datasets import make_classification
+    informative_features = max(10, n_features // 6)
+    redundant_features = max(5, n_features // 12)
     X, y = make_classification(
         n_samples=5000,
-        n_features=1280,
-        n_informative=200,
-        n_redundant=100,
+        n_features=n_features,
+        n_informative=min(informative_features, n_features - 1),
+        n_redundant=min(redundant_features, max(0, n_features - informative_features - 1)),
         random_state=42
     )
     
@@ -144,6 +167,26 @@ def load_trained_model(model_path: Optional[Path] = None) -> RandomForestClassif
     model.fit(X, y)
     
     return model
+
+
+def validate_model_feature_compatibility(model: RandomForestClassifier, embeddings: np.ndarray) -> None:
+    """Warn clearly when model feature count and embedding width are incompatible."""
+    model_feature_count = getattr(model, "n_features_in_", None)
+    embedding_feature_count = int(embeddings.shape[1])
+
+    if model_feature_count is None:
+        print("[WARNING] Loaded model does not expose `n_features_in_`; skipping feature compatibility check.")
+        return
+
+    if int(model_feature_count) != embedding_feature_count:
+        print(
+            "[WARNING] Model/embedding feature mismatch detected: "
+            f"model expects {int(model_feature_count)} features but embeddings have {embedding_feature_count}."
+        )
+        raise ValueError(
+            "Feature dimension mismatch between loaded model and embeddings. "
+            "Train/save a model on the current embedding set or pass a compatible model via `--model-path`."
+        )
 
 
 # ============================================================================
@@ -163,26 +206,67 @@ def parse_variant_identifier(variant_id: str) -> Tuple[str, int, str, str]:
     Raises:
         ValueError: If variant ID format is invalid
     """
-    parts = variant_id.split('_')
+    normalized = normalize_variant_identifier(variant_id)
+    parts = normalized.split('_')
     if len(parts) != 4:
         raise ValueError(
             f"Invalid variant ID format: {variant_id}. Expected: chr_pos_ref_alt"
         )
     
     chromosome, pos_str, ref, alt = parts
-    
+
     try:
         position = int(pos_str)
     except ValueError:
         raise ValueError(f"Invalid position in variant ID: {pos_str}")
     
-    if chromosome not in [f"chr{i}" for i in range(1, 23)] + ["chrX", "chrY", "chrMT"]:
+    if chromosome not in [str(i) for i in range(1, 23)] + ["X", "Y", "MT"]:
         raise ValueError(f"Invalid chromosome: {chromosome}")
     
     if not all(allele in "ACGT" for allele in [ref, alt]):
         raise ValueError(f"Invalid alleles: {ref}, {alt}. Must be ACGT.")
     
-    return chromosome, position, ref, alt
+    return f"chr{chromosome}", position, ref, alt
+
+
+def normalize_variant_identifier(variant_id: str) -> str:
+    """Normalize a user-supplied ID to the curated dataset's canonical `chrom_pos_ref_alt` form."""
+    value = str(variant_id).strip()
+    if not value:
+        raise ValueError("Variant ID is empty.")
+
+    parts = value.split("_")
+    if len(parts) != 4:
+        raise ValueError(
+            f"Invalid variant ID format: {variant_id}. Expected: chr_pos_ref_alt"
+        )
+
+    chromosome, pos_str, ref, alt = parts
+    chromosome = chromosome.strip().lower()
+    if chromosome.startswith("chr"):
+        chromosome = chromosome[3:]
+    if chromosome == "m":
+        chromosome = "MT"
+    else:
+        chromosome = chromosome.upper()
+
+    if chromosome not in [str(i) for i in range(1, 23)] + ["X", "Y", "MT"]:
+        raise ValueError(f"Invalid chromosome: chr{chromosome}")
+
+    try:
+        position = int(pos_str)
+    except ValueError:
+        raise ValueError(f"Invalid position in variant ID: {pos_str}")
+
+    if position <= 0:
+        raise ValueError("Position must be a positive integer.")
+
+    ref = ref.strip().upper()
+    alt = alt.strip().upper()
+    if not all(allele in "ACGT" for allele in [ref, alt]):
+        raise ValueError(f"Invalid alleles: {ref}, {alt}. Must be ACGT.")
+
+    return f"{chromosome}_{position}_{ref}_{alt}"
 
 
 def lookup_embedding(
@@ -233,16 +317,17 @@ def score_single_variant(
     """
     # Validate variant ID format
     try:
+        normalized_variant_id = normalize_variant_identifier(variant_id)
         parse_variant_identifier(variant_id)
     except ValueError as e:
         raise ValueError(f"Invalid variant ID '{variant_id}': {e}")
     
     # Lookup embedding
     variant_map = metadata.get("variant_id_map", {})
-    if variant_id not in variant_map:
+    if normalized_variant_id not in variant_map:
         raise ValueError(f"Variant '{variant_id}' not found in precomputed embeddings")
     
-    idx = variant_map[variant_id]
+    idx = variant_map[normalized_variant_id]
     embedding = embeddings[idx:idx+1]  # Shape: (1, 1280)
     
     # Predict
@@ -253,7 +338,7 @@ def score_single_variant(
     confidence = max(proba)
     
     return VariantScore(
-        variant_id=variant_id,
+        variant_id=normalized_variant_id,
         pathogenicity_score=float(pathogenicity_prob),
         prediction=prediction,
         confidence=float(confidence),
@@ -291,10 +376,11 @@ def score_batch(
     
     for variant_id in variants:
         try:
+            normalized_variant_id = normalize_variant_identifier(variant_id)
             parse_variant_identifier(variant_id)
-            if variant_id in variant_map:
-                available_variants.append(variant_id)
-                indices.append(variant_map[variant_id])
+            if normalized_variant_id in variant_map:
+                available_variants.append(normalized_variant_id)
+                indices.append(variant_map[normalized_variant_id])
             else:
                 failed_variants.append((variant_id, "Not found in embedding data"))
         except ValueError as e:
@@ -425,16 +511,16 @@ def parse_arguments():
         epilog="""
 Examples:
   # Score a single variant
-  python scripts/score_variants.py --variant chr1_100000_A_G
+    python scripts/score_variants.py --variant chr1_1022225_G_A --output app/demo_outputs/cli_real_model_output.csv
 
   # Batch score from CSV file
-  python scripts/score_variants.py --input variants.csv --output results.csv
+    python scripts/score_variants.py --input app/demo_outputs/demo_batch_upload_score_source.csv --output app/demo_outputs/cli_batch_output.csv
 
   # Batch score with JSON output
-  python scripts/score_variants.py --input variants.csv --output results.json --format json
+    python scripts/score_variants.py --input variants.tsv --output app/demo_outputs/results.json --format json
 
   # Adjust decision threshold
-  python scripts/score_variants.py --input variants.csv --output results.csv --threshold 0.6
+    python scripts/score_variants.py --input app/demo_outputs/demo_batch_upload_score_source.csv --output app/demo_outputs/cli_batch_output_t06.csv --threshold 0.6
         """
     )
     
@@ -470,6 +556,13 @@ Examples:
         default=0.5,
         help="Decision threshold for pathogenic classification (default: 0.5)"
     )
+
+    parser.add_argument(
+        "--model-path",
+        type=Path,
+        default=MODELS_DIR / "rf_model.pkl",
+        help="Path to trained model pickle file (default: models/rf_model.pkl)"
+    )
     
     parser.add_argument(
         "--verbose", "-v",
@@ -487,8 +580,9 @@ def main():
     try:
         # Load model and data
         print("[INFO] Loading model and embeddings...")
-        model = load_trained_model()
         embeddings, metadata = load_embeddings_and_metadata(strict=True)
+        model = load_trained_model(model_path=args.model_path, n_features=embeddings.shape[1])
+        validate_model_feature_compatibility(model, embeddings)
         print(f"[INFO] Loaded embeddings: shape={embeddings.shape}")
         print(f"[INFO] Loaded metadata: {len(metadata.get('variant_id_map', {}))} variants indexed")
         
